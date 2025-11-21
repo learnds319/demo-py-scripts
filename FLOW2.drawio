@@ -1,0 +1,125 @@
+<mxfile host="app.diagrams.net" modified="2025-11-21T19:00:00.000Z" agent="5.0 (Windows)" etag="AthenaCompleteV5" version="21.0.0" type="device">
+  <diagram id="AthenaComplete" name="Athena Comprehensive Flow">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ================== ZONE 1: CONSUMERS (The Callers) ================== -->
+        <mxCell id="Zone1" value="ZONE 1: CONSUMERS" style="swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;startSize=30;rounded=1;fontStyle=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="40" y="80" width="240" height="520" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="AppNode" value="&lt;b&gt;Payer Knowledge App&lt;/b&gt;&lt;br&gt;(Runtime Traffic)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=12;fontStyle=0" parent="Zone1" vertex="1">
+          <mxGeometry x="45" y="120" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="RegNode" value="&lt;b&gt;Regression Suite&lt;/b&gt;&lt;br&gt;(Golden Dataset Script)&lt;br&gt;&lt;i&gt;*Phase 5 Task&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=0;dashed=1" parent="Zone1" vertex="1">
+          <mxGeometry x="45" y="320" width="150" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ================== ZONE 2: MIDDLEWARE (The Solution) ================== -->
+        <mxCell id="Zone2" value="ZONE 2: ATHENA AI BRIDGE (llmops_core)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;startSize=30;rounded=1;fontStyle=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="320" y="80" width="480" height="520" as="geometry" />
+        </mxCell>
+
+        <!-- Step 1: Config -->
+        <mxCell id="Step1" value="1. Config Loader&lt;br&gt;&lt;i&gt;(Env &amp; Secrets)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" parent="Zone2" vertex="1">
+          <mxGeometry x="40" y="60" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Step 2: Prompt -->
+        <mxCell id="Step2" value="2. Prompt Manager&lt;br&gt;&lt;i&gt;(Cache &amp; Sync)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" parent="Zone2" vertex="1">
+          <mxGeometry x="40" y="140" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Step 3: Sanitize -->
+        <mxCell id="Step3" value="3. PII Sanitizer&lt;br&gt;&lt;i&gt;(Regex Engine)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="Zone2" vertex="1">
+          <mxGeometry x="40" y="220" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Step 4: Wrapper -->
+        <mxCell id="Step4" value="&lt;b&gt;4. Client Wrapper&lt;/b&gt;&lt;br&gt;Metadata Injection&lt;br&gt;&lt;i&gt;(Cost Tracking via PayerID)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcc99;strokeColor=#e69138;strokeWidth=2;" parent="Zone2" vertex="1">
+          <mxGeometry x="30" y="310" width="180" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Resilience Layer -->
+        <mxCell id="ResilienceGroup" value="Resilience Layer" style="group" parent="Zone2" vertex="1" connectable="0">
+          <mxGeometry x="260" y="310" width="180" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="ResilienceBox" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" parent="ResilienceGroup" vertex="1">
+          <mxGeometry x="0" y="0" width="180" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="Queue" value="Async Queue" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#e1d5e7;strokeColor=#9673a6;" parent="ResilienceGroup" vertex="1">
+          <mxGeometry x="40" y="10" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CB" value="Circuit Breaker" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" parent="ResilienceGroup" vertex="1">
+          <mxGeometry x="30" y="90" width="120" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ================== ZONE 3: EXTERNAL ================== -->
+        <mxCell id="Zone3" value="ZONE 3: CLOUDS" style="swimlane;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;startSize=30;rounded=1;fontStyle=1;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="840" y="80" width="220" height="520" as="geometry" />
+        </mxCell>
+
+        <mxCell id="Langfuse" value="Langfuse Cloud&lt;br&gt;(Observability)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" parent="Zone3" vertex="1">
+          <mxGeometry x="30" y="60" width="160" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="OpenAI" value="Azure OpenAI&lt;br&gt;(GPT Models)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontStyle=1" parent="Zone3" vertex="1">
+          <mxGeometry x="30" y="340" width="160" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ================== CONNECTORS ================== -->
+        
+        <!-- Entry Points -->
+        <mxCell id="c1" value="Init" style="endArrow=classic;html=1;entryX=0;entryY=0.5;exitX=1;exitY=0.5;" parent="1" source="AppNode" target="Step1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" value="Run Test" style="endArrow=classic;html=1;entryX=0;entryY=0.5;exitX=1;exitY=0.5;dashed=1;" parent="1" source="RegNode" target="Step1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Internal Pipeline -->
+        <mxCell id="c3" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="Step1" target="Step2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="Step2" target="Step3" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" parent="1" source="Step3" target="Step4" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- External Calls -->
+        <mxCell id="c6" value="Sync Call" style="endArrow=classic;html=1;exitX=1;exitY=0.5;entryX=0.16;entryY=0.55;entryPerimeter=0;strokeWidth=3;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" source="Step4" target="OpenAI" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c7" value="Response" style="endArrow=classic;html=1;exitX=0.16;exitY=0.8;exitPerimeter=0;entryX=1;entryY=0.75;dashed=1;strokeColor=#82b366;" parent="1" source="OpenAI" target="Step4" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Observability Flow -->
+        <mxCell id="c8" value="Enqueue" style="endArrow=classic;html=1;exitX=1;exitY=0.25;entryX=0;entryY=0.5;dashed=1;strokeColor=#9673a6;" parent="1" source="Step4" target="Queue" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c9" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;dashed=1;strokeColor=#9673a6;" parent="Zone2" source="Queue" target="CB" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="c10" value="Log Telemetry" style="endArrow=classic;html=1;exitX=1;exitY=0.5;entryX=0.3;entryY=0.8;entryPerimeter=0;dashed=1;strokeColor=#9673a6;curved=1;" parent="1" source="CB" target="Langfuse" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Prompt Sync -->
+        <mxCell id="c11" value="Sync Version" style="endArrow=classic;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;strokeColor=#d6b656;" parent="1" source="Step2" target="Langfuse" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
