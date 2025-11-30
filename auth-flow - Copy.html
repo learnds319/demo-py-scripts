@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project : API Auth Implementation Guide</title>
+    <style>
+        :root {
+            --primary: #0056b3; /* Professional Blue */
+            --secondary: #6c757d; /* Grey */
+            --success: #28a745; /* Green */
+            --warning: #ffc107; /* Yellow/Orange */
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #343a40;
+            --border: #dee2e6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { margin-bottom: 10px; color: var(--primary); }
+        p.subtitle { color: var(--secondary); margin-bottom: 40px; font-size: 1.1rem; }
+
+        /* Timeline / Flow Container */
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+        }
+
+        /* Connecting Line (Vertical) */
+        .flow-container::before {
+            content: '';
+            position: absolute;
+            left: 40px;
+            top: 20px;
+            bottom: 20px;
+            width: 4px;
+            background: #e9ecef;
+            z-index: 0;
+        }
+
+        /* Task Card */
+        .task-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-left: 80px; /* Space for line */
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        /* Number Badge */
+        .task-badge {
+            position: absolute;
+            left: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            z-index: 1;
+            box-shadow: 0 0 0 5px var(--bg); /* Spacing effect */
+        }
+
+        .task-title { font-weight: 600; font-size: 1.2rem; margin-bottom: 5px; }
+        .task-summary { color: var(--secondary); font-size: 0.95rem; }
+
+        /* Status Tags */
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+        .tag-admin { background: #e3f2fd; color: #0d47a1; }
+        .tag-net { background: #e8f5e9; color: #1b5e20; }
+        .tag-infra { background: #fff3e0; color: #e65100; }
+        .tag-dev { background: #f3e5f5; color: #4a148c; }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 700px;
+            border-radius: 10px;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #aaa;
+            border: none;
+            background: none;
+        }
+        .close-btn:hover { color: #333; }
+
+        /* Modal Layout */
+        .modal-header { border-bottom: 2px solid #f1f1f1; padding-bottom: 15px; margin-bottom: 20px; }
+        .modal-h2 { margin: 0; color: var(--primary); }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+        }
+        .info-label { font-size: 0.8rem; text-transform: uppercase; color: #7f8c8d; font-weight: bold; margin-bottom: 5px; }
+        .info-value { font-weight: 500; font-family: monospace; font-size: 0.95rem; }
+
+        .diagram-box {
+            background: #fff;
+            border: 1px dashed #ccc;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .diagram-title { font-weight: bold; margin-bottom: 10px; display: block; color: var(--secondary); }
+        
+        /* Simple Flow Diagram CSS */
+        .flow-step { display: inline-block; padding: 8px 15px; background: #e9ecef; border-radius: 4px; border: 1px solid #ced4da; }
+        .flow-arrow { display: inline-block; margin: 0 10px; color: #adb5bd; }
+
+    </style>
+</head>
+<body>
+
+    <h1>API Authentication Implementation Guide</h1>
+    <p class="subtitle">Technical Workflow for API Gateway & Service Discovery Integration</p>
+
+    <div class="flow-container">
+        
+        <!-- Task 1 -->
+        <div class="task-card" onclick="openModal('iam')">
+            <div class="task-badge">1</div>
+            <div class="task-title">Identity & Access Management <span class="tag tag-admin">Fabric CLI</span></div>
+            <div class="task-summary">Register application identity and define permission scopes.</div>
+        </div>
+
+        <!-- Task 2 -->
+        <div class="task-card" onclick="openModal('network')">
+            <div class="task-badge">2</div>
+            <div class="task-title">Network & Connectivity <span class="tag tag-net">Networking</span></div>
+            <div class="task-summary">Establish Transit Gateway connectivity and whitelist VPC.</div>
+        </div>
+
+        <!-- Task 3 -->
+        <div class="task-card" onclick="openModal('infra')">
+            <div class="task-badge">3</div>
+            <div class="task-title">Infrastructure Provisioning <span class="tag tag-infra">Terraform</span></div>
+            <div class="task-summary">Create Service Discovery Namespace and Kong Entitlement.</div>
+        </div>
+
+        <!-- Task 4 -->
+        <div class="task-card" onclick="openModal('security')">
+            <div class="task-badge">4</div>
+            <div class="task-title">Security Configuration <span class="tag tag-admin">Fabric Access</span></div>
+            <div class="task-summary">Define and enforce API Access Control Rules (ACL).</div>
+        </div>
+
+        <!-- Task 5 -->
+        <div class="task-card" onclick="openModal('deploy')">
+            <div class="task-badge">5</div>
+            <div class="task-title">Deployment Integration <span class="tag tag-dev">Jenkins</span></div>
+            <div class="task-summary">Inject Service Registry ARN into ECS Task Definition.</div>
+        </div>
+
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <div id="modal-body">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tasks = {
+            iam: {
+                title: "1. Identity & Access Management",
+                description: "Establish the application's unique identity in the App Manager Service (AMS) to enable token issuance and scope validation.",
+                inputs: "Developer Credentials (AD)",
+                process: "Execute <code>fabric app create</code>",
+                outputs: "App UUID (Client ID)",
+                diagram: `
+                    <span class="flow-step">Dev Terminal</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step">Fabric CLI</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step">AMS Backend</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step" style="background:#d4edda; border-color:#c3e6cb">UUID Generated</span>
+                `
+            },
+            network: {
+                title: "2. Network Connectivity",
+                description: "Authorize network traffic between the API Gateway (Platform Account) and the Application VPC (Team Account) via Transit Gateway.",
+                inputs: "AWS Account ID, VPC ID, Region",
+                process: "PR to <code>mgw3-shared-resource</code> repo",
+                outputs: "VPC Whitelist Entry",
+                diagram: `
+                    <span class="flow-step">Gateway VPC</span>
+                    <span class="flow-arrow">⬌</span>
+                    <span class="flow-step">Transit Gateway</span>
+                    <span class="flow-arrow">⬌</span>
+                    <span class="flow-step" style="background:#fff3cd; border-color:#ffeeba">Your VPC</span>
+                `
+            },
+            infra: {
+                title: "3. Infrastructure Provisioning",
+                description: "Provision the AWS Cloud Map namespace for service discovery and the Kong Gateway entitlement resource.",
+                inputs: "App UUID (from Task 1), VPC ID",
+                process: "Terraform Apply (Modules: <code>aws-service-discovery</code>, <code>kong-apigw</code>)",
+                outputs: "Service Registry ARN",
+                diagram: `
+                    <span class="flow-step">Terraform</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step">AWS Cloud Map</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step" style="background:#d4edda; border-color:#c3e6cb">Registry ARN</span>
+                `
+            },
+            security: {
+                title: "4. Security Configuration",
+                description: "Define the Access Control List (ACL) mapping API resource paths to required Oauth2 Scopes.",
+                inputs: "Access Definition JSON",
+                process: "Execute <code>fabric app access push</code>",
+                outputs: "Active Gateway Route Rules",
+                diagram: `
+                    <span class="flow-step">JSON File</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step">Fabric CLI</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step" style="background:#d4edda; border-color:#c3e6cb">Kong Route Policy</span>
+                `
+            },
+            deploy: {
+                title: "5. Deployment Integration",
+                description: "Update the CI/CD pipeline to inject the Service Registry ARN into the ECS Service configuration during deployment.",
+                inputs: "Registry ARN (from Task 3)",
+                process: "Jenkins Pipeline Execution",
+                outputs: "Running ECS Task (Registered)",
+                diagram: `
+                    <span class="flow-step">Jenkins</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step">ECS Task Def</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step">ECS Service</span>
+                    <span class="flow-arrow">⮕</span>
+                    <span class="flow-step" style="background:#cce5ff; border-color:#b8daff">Auto-Registration</span>
+                `
+            }
+        };
+
+        function openModal(taskId) {
+            const t = tasks[taskId];
+            const body = document.getElementById('modal-body');
+            
+            body.innerHTML = `
+                <div class="modal-header">
+                    <h2 class="modal-h2">${t.title}</h2>
+                    <p style="color:#666; margin-top:5px">${t.description}</p>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-box">
+                        <div class="info-label">Input / Prerequisites</div>
+                        <div class="info-value">${t.inputs}</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-label">Process / Action</div>
+                        <div class="info-value">${t.process}</div>
+                    </div>
+                </div>
+
+                <div class="info-box" style="border-left-color: #28a745">
+                    <div class="info-label">End Result / Output</div>
+                    <div class="info-value">${t.outputs}</div>
+                </div>
+
+                <div class="diagram-box">
+                    <span class="diagram-title">Data Flow Visualization</span>
+                    ${t.diagram}
+                </div>
+            `;
+            
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Close on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

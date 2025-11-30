@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project : Auth & Infra Architecture</title>
+    <style>
+        :root {
+            --admin: #8e44ad;
+            --infra: #27ae60;
+            --deploy: #2980b9;
+            --runtime: #e67e22;
+            --bg: #f4f6f9;
+            --card: #ffffff;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar / Details Panel */
+        #details-panel {
+            width: 350px;
+            background: var(--card);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            overflow-y: auto;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            position: absolute;
+            height: 100%;
+            z-index: 100;
+        }
+
+        #details-panel.active {
+            transform: translateX(0);
+            position: relative;
+        }
+
+        .panel-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .checklist-item input {
+            margin-right: 10px;
+            margin-top: 4px;
+        }
+
+        .role-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        /* Main Canvas */
+        #main-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        h1 { margin-bottom: 10px; }
+        p.subtitle { color: #7f8c8d; margin-bottom: 50px; }
+
+        /* The Flow Container */
+        .pipeline-container {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 1200px;
+            position: relative;
+        }
+
+        /* Connecting Line */
+        .pipeline-line {
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            right: 50px;
+            height: 4px;
+            background: #dfe6e9;
+            z-index: 0;
+            transform: translateY(-50%);
+        }
+
+        /* Phase Cards */
+        .phase-card {
+            background: var(--card);
+            width: 220px;
+            height: 280px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            border-top: 5px solid #ccc;
+        }
+
+        .phase-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .phase-card.active {
+            transform: scale(1.05);
+            border-color: currentColor;
+        }
+
+        .phase-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .phase-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .phase-desc {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            padding: 0 15px;
+        }
+
+        /* Simulation Ball */
+        #traffic-ball {
+            width: 15px;
+            height: 15px;
+            background-color: #e74c3c;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 60px;
+            transform: translateY(-50%);
+            z-index: 2;
+            display: none;
+            box-shadow: 0 0 10px #e74c3c;
+        }
+
+        /* Tooltip Logic */
+        .tooltip {
+            border-bottom: 1px dotted #333;
+            cursor: help;
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 200;
+        }
+
+        /* Specific Colors */
+        .c-admin { border-top-color: var(--admin); color: var(--admin); }
+        .c-infra { border-top-color: var(--infra); color: var(--infra); }
+        .c-deploy { border-top-color: var(--deploy); color: var(--deploy); }
+        .c-runtime { border-top-color: var(--runtime); color: var(--runtime); }
+
+        #run-sim {
+            margin-top: 50px;
+            padding: 12px 30px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        #run-sim:hover { background: #34495e; }
+
+    </style>
+</head>
+<body>
+
+    <div id="details-panel">
+        <div id="panel-content">
+            <h2 style="color:#bdc3c7; text-align:center; margin-top:50px;">Select a phase to view details</h2>
+        </div>
+    </div>
+
+    <div id="main-view">
+        <h1>Project : Auth Implementation</h1>
+        <p class="subtitle">Interactive Architectural Flow | Click phases for Action Items</p>
+
+        <div class="pipeline-container">
+            <div class="pipeline-line"></div>
+            <div id="traffic-ball"></div>
+
+            <div class="phase-card c-admin" onclick="showDetails('admin', this)">
+                <div class="phase-icon">📋</div>
+                <div class="phase-title">1. Identity & Network</div>
+                <div class="phase-desc">Fabric Registration, Scopes, and VPC Whitelisting.</div>
+            </div>
+
+            <div class="phase-card c-infra" onclick="showDetails('infra', this)">
+                <div class="phase-icon">🏗️</div>
+                <div class="phase-title">2. Infrastructure</div>
+                <div class="phase-desc">Terraform builds Service Discovery & Kong Link.</div>
+            </div>
+
+            <div class="phase-card c-deploy" onclick="showDetails('deploy', this)">
+                <div class="phase-icon">🚀</div>
+                <div class="phase-title">3. Deployment</div>
+                <div class="phase-desc">Jenkins injects Registry ID into the App.</div>
+            </div>
+
+            <div class="phase-card c-runtime" onclick="showDetails('runtime', this)">
+                <div class="phase-icon">⚡</div>
+                <div class="phase-title">4. Runtime Flow</div>
+                <div class="phase-desc">Gateway routes traffic via Cloud Map.</div>
+            </div>
+        </div>
+
+        <button id="run-sim" onclick="runSimulation()">▶ Simulate Request Flow</button>
+    </div>
+
+    <script>
+        const data = {
+            admin: {
+                title: "Phase 1: Identity & Network",
+                role: "Admin / Network",
+                color: "#8e44ad",
+                content: `
+                    <p>Before we build servers, we need permissions and ID cards.</p>
+                    <h3>Action Checklist:</h3>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Fabric:</strong> Run <code>fabric app create</code> to get App UUID.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Scopes:</strong> Define <code>proj.read</code> in AMS Portal.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Network:</strong> Raise PR to whitelist <span class="tooltip" data-tip="Virtual Private Cloud: Your private network">VPC</span> in <code>mgw3-shared-resource</code>.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Domain:</strong> Register <code>callai.api..io</code>.</div>
+                `
+            },
+            infra: {
+                title: "Phase 2: Infrastructure",
+                role: "DevOps / Terraform",
+                color: "#27ae60",
+                content: `
+                    <p>We use Terraform to build the "Phone Book" (Registry). We do NOT deploy the app here.</p>
+                    <h3>Action Checklist:</h3>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Repo:</strong> Create <code>ISC Terraform</code> repository pattern.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Module 1:</strong> Add <code>aws-service-discovery</code> to create the Registry.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Module 2:</strong> Add <code>kong-apigw</code> linked to App UUID.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Output:</strong> Terraform generates the Registry <span class="tooltip" data-tip="Amazon Resource Name: A unique ID for the resource">ARN</span>.</div>
+                `
+            },
+            deploy: {
+                title: "Phase 3: Deployment",
+                role: "Jenkins / CI-CD",
+                color: "#2980b9",
+                content: `
+                    <p>We update Jenkins to "Connect the dots" between Code and Infrastructure.</p>
+                    <h3>Action Checklist:</h3>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Config:</strong> Edit <code>Jenkinsfile</code> or Task Definition.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Inject:</strong> Add <code>serviceRegistries</code> block with the ARN from Phase 2.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Env Vars:</strong> Set <code>API_GATEWAY_URL</code> for the app to use.</div>
+                    <div class="checklist-item"><input type="checkbox"> <strong>Launch:</strong> Jenkins deploys the container with the map to the registry.</div>
+                `
+            },
+            runtime: {
+                title: "Phase 4: Runtime Flow",
+                role: "AWS / Automated",
+                color: "#e67e22",
+                content: `
+                    <p>This is what happens when a user actually calls the API.</p>
+                    <h3>The Data Flow:</h3>
+                    <ol style="padding-left:20px; font-size:0.9rem;">
+                        <li style="margin-bottom:10px;">User calls <strong>Gateway URL</strong> with Token.</li>
+                        <li style="margin-bottom:10px;">Gateway checks <strong>Scopes</strong> (Access Definition).</li>
+                        <li style="margin-bottom:10px;">Gateway looks up IP in <strong>Service Discovery</strong>.</li>
+                        <li>Gateway routes traffic to <strong><span class="tooltip" data-tip="Elastic Container Service: Where your code runs">ECS</span> Container</strong>.</li>
+                    </ol>
+                `
+            }
+        };
+
+        function showDetails(phaseKey, element) {
+            // Highlight Card
+            document.querySelectorAll('.phase-card').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+
+            // Populate Panel
+            const info = data[phaseKey];
+            const panel = document.getElementById('details-panel');
+            const contentDiv = document.getElementById('panel-content');
+
+            contentDiv.innerHTML = `
+                <div class="panel-header" style="color:${info.color}">${info.title}</div>
+                <div class="role-tag" style="background:${info.color}">${info.role}</div>
+                ${info.content}
+            `;
+
+            // Slide in panel
+            panel.classList.add('active');
+        }
+
+        function runSimulation() {
+            const ball = document.getElementById('traffic-ball');
+            const cards = document.querySelectorAll('.phase-card');
+            
+            ball.style.display = 'block';
+            ball.style.left = '60px'; // Start
+            
+            // Simple animation sequence
+            let duration = 4000; // 4 seconds total
+            
+            ball.animate([
+                { left: '10%', opacity: 1 },
+                { left: '90%', opacity: 1 }
+            ], {
+                duration: duration,
+                easing: 'ease-in-out',
+                fill: 'forwards'
+            });
+
+            // Highlight cards as ball passes
+            setTimeout(() => cards[0].classList.add('active'), 0);
+            setTimeout(() => { cards[0].classList.remove('active'); cards[1].classList.add('active'); }, 1000);
+            setTimeout(() => { cards[1].classList.remove('active'); cards[2].classList.add('active'); }, 2000);
+            setTimeout(() => { cards[2].classList.remove('active'); cards[3].classList.add('active'); }, 3000);
+            setTimeout(() => { cards[3].classList.remove('active'); ball.style.display='none'; }, 4000);
+        }
+    </script>
+</body>
+</html>

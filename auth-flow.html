@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project : API Auth Data Flow</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --secondary: #6c757d;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #343a40;
+            --border: #dee2e6;
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { margin-bottom: 5px; color: var(--primary); }
+        p.subtitle { color: var(--secondary); margin-bottom: 30px; }
+
+        /* Flow Container */
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 850px;
+            position: relative;
+        }
+
+        .flow-container::before {
+            content: '';
+            position: absolute;
+            left: 35px;
+            top: 20px;
+            bottom: 20px;
+            width: 4px;
+            background: #e9ecef;
+            z-index: 0;
+        }
+
+        /* Task Card */
+        .task-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-left: 70px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-card:hover {
+            transform: translateX(5px);
+            border-color: var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .task-badge {
+            position: absolute;
+            left: -55px;
+            width: 35px;
+            height: 35px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            z-index: 1;
+            box-shadow: 0 0 0 5px var(--bg);
+        }
+
+        .task-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
+        .task-info p { margin: 0; color: var(--secondary); font-size: 0.9rem; }
+        .action-btn { background: #e9ecef; border: none; padding: 5px 12px; border-radius: 4px; font-weight: 600; color: var(--secondary); font-size: 0.8rem;}
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-content {
+            background: white;
+            width: 95%;
+            max-width: 800px;
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            overflow: hidden;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { margin: 0; font-size: 1.4rem; }
+        .close-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+        .modal-body { padding: 30px; max-height: 80vh; overflow-y: auto; }
+
+        /* Data Lab Visualization */
+        .data-lab {
+            display: flex;
+            align-items: stretch;
+            margin-top: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+        }
+
+        .lab-section {
+            flex: 1;
+            padding: 20px;
+            border-right: 1px dashed #ced4da;
+            display: flex;
+            flex-direction: column;
+        }
+        .lab-section:last-child { border-right: none; }
+
+        .lab-title {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #adb5bd;
+            margin-bottom: 15px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            flex-grow: 1;
+        }
+
+        .arrow-separator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--secondary);
+            padding: 0 5px;
+            background: #f8f9fa;
+        }
+
+        .context-note {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            border-left: 4px solid #ffeeba;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Project : Auth Implementation</h1>
+    <p class="subtitle">Click a task to verify Inputs, Transformation, and Outputs.</p>
+
+    <div class="flow-container">
+        
+        <!-- Task 1 -->
+        <div class="task-card" onclick="openModal('iam')">
+            <div class="task-badge">1</div>
+            <div class="task-info">
+                <h3>Identity Registration</h3>
+                <p>Register App in AMS via Fabric CLI</p>
+            </div>
+            <button class="action-btn">View Data</button>
+        </div>
+
+        <!-- Task 2 -->
+        <div class="task-card" onclick="openModal('network')">
+            <div class="task-badge">2</div>
+            <div class="task-info">
+                <h3>Network Connectivity</h3>
+                <p>Whitelist VPC in Shared Resource Repo</p>
+            </div>
+            <button class="action-btn">View Data</button>
+        </div>
+
+        <!-- Task 3 -->
+        <div class="task-card" onclick="openModal('infra')">
+            <div class="task-badge">3</div>
+            <div class="task-info">
+                <h3>Infrastructure Provisioning</h3>
+                <p>Terraform: Service Discovery & Kong</p>
+            </div>
+            <button class="action-btn">View Data</button>
+        </div>
+
+        <!-- Task 4 -->
+        <div class="task-card" onclick="openModal('security')">
+            <div class="task-badge">4</div>
+            <div class="task-info">
+                <h3>Security Configuration</h3>
+                <p>Define & Push Access Rules (ACL)</p>
+            </div>
+            <button class="action-btn">View Data</button>
+        </div>
+
+        <!-- Task 5 -->
+        <div class="task-card" onclick="openModal('deploy')">
+            <div class="task-badge">5</div>
+            <div class="task-info">
+                <h3>Jenkins Deployment</h3>
+                <p>Inject Registry ID into App Config</p>
+            </div>
+            <button class="action-btn">View Data</button>
+        </div>
+
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="m-title">Task Title</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="context-note" id="m-desc">Description goes here...</div>
+                
+                <h4 style="margin: 0 0 10px 0; color: var(--text);">Data Transformation Lab:</h4>
+                <div class="data-lab">
+                    <!-- INPUT -->
+                    <div class="lab-section">
+                        <div class="lab-title">1. Raw Input</div>
+                        <div class="code-block" id="m-input">Input Code</div>
+                    </div>
+                    
+                    <!-- PROCESS Arrow -->
+                    <div class="arrow-separator">➔</div>
+
+                    <!-- TRANSFORMATION -->
+                    <div class="lab-section" style="background: #ffffff;">
+                        <div class="lab-title">2. The Process</div>
+                        <div style="text-align:center; font-size:0.9rem; padding-top:20px;">
+                            <strong id="m-process-name">Process Name</strong><br>
+                            <span style="color:#666; font-size:0.8rem;" id="m-process-desc">Description</span>
+                        </div>
+                    </div>
+
+                    <!-- PROCESS Arrow -->
+                    <div class="arrow-separator">➔</div>
+
+                    <!-- OUTPUT -->
+                    <div class="lab-section">
+                        <div class="lab-title">3. Final Output</div>
+                        <div class="code-block" style="border-left: 3px solid #28a745;" id="m-output">Output Data</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tasks = {
+            iam: {
+                title: "1. Identity Registration (Fabric)",
+                description: "We define the application in the central system (AMS) to get a unique ID. This ID is required for all future steps.",
+                input: "Command:\nfabric app create\n--name \"policy-surveillance\"",
+                processName: "AMS Backend Generation",
+                processDesc: "System assigns a UUID and creates a record in the database.",
+                output: "File: fabric.json\n{\n  \"app_id\": \"53eb95a2-659d...\",\n  \"name\": \"policy-surveillance\"\n}"
+            },
+            network: {
+                title: "2. Network Whitelisting",
+                description: "We authorize traffic between the Gateway Account and our Team Account by updating the shared config.",
+                input: "File: 123456789.json\n{\n  \"vpc_id\": \"vpc-0a1b2c3d\",\n  \"region\": \"us-east-1\",\n  \"env\": \"dev\"\n}",
+                processName: "Pull Request Merge",
+                processDesc: "Platform team merges PR -> Updates Transit Gateway Route Tables.",
+                output: "Network Status:\nConnected\n(Gateway can now reach 10.0.1.x)"
+            },
+            infra: {
+                title: "3. Infrastructure (Terraform)",
+                description: "Terraform builds the permanent 'Phone Book' (Registry) and links it to the Gateway using the App ID.",
+                input: "Terraform Module:\nmodule \"discovery\" {\n  name = \"policy-extractor\"\n}\n\nmodule \"kong\" {\n  client_id = \"53eb95a2...\"\n}",
+                processName: "Terraform Apply",
+                processDesc: "Calls AWS CloudMap API and Kong Admin API to create resources.",
+                output: "AWS Resource (ARN):\narn:aws:servicediscovery:us-east-1:12345:service/srv-xyz"
+            },
+            security: {
+                title: "4. Security Configuration",
+                description: "We map specific API URL paths to specific Scopes (Permissions).",
+                input: "File: access-definition.json\n{\n  \"path\": \"/start_job\",\n  \"scope\": \"proj.execute\"\n}",
+                processName: "Fabric Access Push",
+                processDesc: "Uploads rules to Kong Gateway. Gateway updates its internal routing table.",
+                output: "Active Rule:\nIF request == '/start_job'\nAND token has 'proj.execute'\nTHEN Allow"
+            },
+            deploy: {
+                title: "5. Jenkins Deployment",
+                description: "Jenkins launches the app and tells it: 'Here is the ID of the Registry where you should list your IP.'",
+                input: "Environment Var:\nSERVICE_REGISTRY_ARN = \"arn:aws:servicediscovery...\"\n(From Step 3)",
+                processName: "ECS Task Launch",
+                processDesc: "Container starts -> Reads ARN -> Calls AWS CloudMap to register IP.",
+                output: "CloudMap Entry:\nService: policy-extractor\nIP: 10.0.5.20\nPort: 8080"
+            }
+        };
+
+        function openModal(id) {
+            const t = tasks[id];
+            document.getElementById('m-title').innerText = t.title;
+            document.getElementById('m-desc').innerText = t.description;
+            document.getElementById('m-input').innerText = t.input;
+            document.getElementById('m-process-name').innerText = t.processName;
+            document.getElementById('m-process-desc').innerText = t.processDesc;
+            document.getElementById('m-output').innerText = t.output;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        window.onclick = function(e) {
+            if (e.target == document.getElementById('modal')) closeModal();
+        }
+    </script>
+</body>
+</html>
