@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Athena: Langfuse POC Guide</title>
+    <style>
+        :root {
+            --primary: #2c3e50; /* Deep Blue/Grey */
+            --accent: #e67e22;  /* Langfuse Orange */
+            --success: #27ae60; /* Green */
+            --bg: #f4f6f7;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border: #ecf0f1;
+            --code-bg: #2d3436;
+            --code-text: #dfe6e9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 40px;
+            border-bottom: 2px solid #dfe6e9;
+            padding-bottom: 20px;
+        }
+
+        h1 { margin: 0 0 10px 0; color: var(--primary); font-size: 2rem; }
+        p.subtitle { margin: 0; color: var(--text-muted); font-size: 1.1rem; }
+
+        /* CHECKLIST GRID LAYOUT */
+        .task-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .task-card {
+            background: var(--card-bg);
+            border-left: 5px solid var(--accent);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            padding: 25px;
+            display: grid;
+            grid-template-columns: 50px 1fr auto;
+            align-items: center;
+            gap: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            border-left-color: var(--primary);
+        }
+
+        .task-badge {
+            width: 40px;
+            height: 40px;
+            background: var(--bg);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            border: 2px solid var(--border);
+        }
+
+        .task-content h3 { margin: 0 0 5px 0; font-size: 1.2rem; color: var(--primary); }
+        .task-content p { margin: 0; color: var(--text-muted); font-size: 0.95rem; }
+
+        .btn-details {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .task-card:hover .btn-details {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(44, 62, 80, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 900px;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            overflow: hidden;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { margin: 0; font-size: 1.5rem; }
+        .close-btn { background: none; border: none; color: white; font-size: 2rem; cursor: pointer; line-height: 1; }
+
+        .modal-body {
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* DATA LAB STYLES */
+        .concept-box {
+            background: #fcf3cf; /* Light Orange/Yellow */
+            border-left: 4px solid var(--accent);
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            color: #d35400;
+        }
+        .concept-title { font-weight: bold; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 5px; opacity: 0.8; }
+
+        .pipeline-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: stretch;
+        }
+
+        .pipeline-step {
+            flex: 1;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .step-header {
+            background: #f8f9fa;
+            padding: 10px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+        }
+
+        .step-content {
+            padding: 15px;
+            background: var(--code-bg);
+            color: var(--code-text);
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            flex-grow: 1;
+        }
+
+        .step-content.process { background: #fff; color: var(--text-main); border-left: none; }
+        
+        .arrow {
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+        }
+
+        /* DIAGRAM BOX */
+        .diagram-box {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #fcfcfc;
+        }
+        
+        .diagram-flow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .d-node {
+            background: white;
+            border: 1px solid #bdc3c7;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .d-arrow { color: var(--accent); font-weight: bold; }
+        .d-highlight { border-color: var(--success); background: #eafaf1; color: var(--success); }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Implementation Guide: Langfuse POC</h1>
+        <p class="subtitle">Self-Hosted Observability Stack (Hybrid Architecture)</p>
+    </header>
+
+    <div class="task-grid">
+        
+        <!-- TASK 1 -->
+        <div class="task-card" onclick="openModal('provision')">
+            <div class="task-badge">1</div>
+            <div class="task-content">
+                <h3>Server Provisioning</h3>
+                <p>Request and Configure Linux EC2 Instance</p>
+            </div>
+            <button class="btn-details">Analyze Data Flow</button>
+        </div>
+
+        <!-- TASK 2 -->
+        <div class="task-card" onclick="openModal('setup')">
+            <div class="task-badge">2</div>
+            <div class="task-content">
+                <h3>Environment Setup</h3>
+                <p>Install Docker Engine & Docker Compose</p>
+            </div>
+            <button class="btn-details">Analyze Data Flow</button>
+        </div>
+
+        <!-- TASK 3 -->
+        <div class="task-card" onclick="openModal('deploy')">
+            <div class="task-badge">3</div>
+            <div class="task-content">
+                <h3>Stack Deployment</h3>
+                <p>Run Langfuse (Postgres + Clickhouse) via Compose</p>
+            </div>
+            <button class="btn-details">Analyze Data Flow</button>
+        </div>
+
+        <!-- TASK 4 -->
+        <div class="task-card" onclick="openModal('network')">
+            <div class="task-badge">4</div>
+            <div class="task-content">
+                <h3>Network Access</h3>
+                <p>Configure Security Groups for VPN Access</p>
+            </div>
+            <button class="btn-details">Analyze Data Flow</button>
+        </div>
+
+        <!-- TASK 5 -->
+        <div class="task-card" onclick="openModal('client')">
+            <div class="task-badge">5</div>
+            <div class="task-content">
+                <h3>Client Integration</h3>
+                <p>Connect Local Python App to EC2 Server</p>
+            </div>
+            <button class="btn-details">Analyze Data Flow</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL TEMPLATE -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="m-title">Task Title</h2>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            
+            <!-- Technical Concept -->
+            <div class="concept-box">
+                <div class="concept-title">Technical Concept</div>
+                <div id="m-concept">Description...</div>
+            </div>
+
+            <!-- Data Pipeline -->
+            <h4 style="margin-bottom:15px; color:var(--text-muted); text-transform:uppercase; font-size:0.85rem;">Data Transformation Pipeline</h4>
+            <div class="pipeline-container">
+                <div class="pipeline-step">
+                    <div class="step-header">1. Input / Source</div>
+                    <div class="step-content" id="m-input">Input Data</div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="pipeline-step">
+                    <div class="step-header">2. Process</div>
+                    <div class="step-content process">
+                        <strong id="m-process-name" style="color:var(--primary)">Process Name</strong><br>
+                        <span id="m-process-desc" style="font-size:0.9rem; color:#7f8c8d;">Description</span>
+                    </div>
+                </div>
+                <div class="arrow">➜</div>
+                <div class="pipeline-step">
+                    <div class="step-header">3. Output / Result</div>
+                    <div class="step-content" id="m-output" style="border-left: 3px solid var(--success);">Output Data</div>
+                </div>
+            </div>
+
+            <!-- Diagram -->
+            <div class="diagram-box">
+                <div class="concept-title" style="margin-bottom:15px;">System Data Flow</div>
+                <div class="diagram-flow" id="m-diagram">
+                    <!-- Nodes injected via JS -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    const data = {
+        provision: {
+            title: "1. Server Provisioning",
+            concept: "Acquiring a dedicated <strong>Linux EC2 Instance</strong> sized appropriately to handle the memory-intensive database components (Clickhouse & Postgres) of the observability stack.",
+            input: "Request Spec:\nAMI: Amazon Linux 2023\nType: t3.xlarge (16GB RAM)\nDisk: 100GB gp3\nNetwork: Private Subnet",
+            processName: "AWS EC2 Launch",
+            processDesc: "1. DevOps approves request\n2. AWS provisions VM\n3. Assigns Private IP",
+            output: "Infrastructure:\nStatus: RUNNING\nIP: 10.0.x.x\nAccess: SSH Key (.pem)",
+            diagram: [
+                "Jira Request", "DevOps Approval", "AWS Control Plane", "EC2 Active"
+            ]
+        },
+        setup: {
+            title: "2. Environment Setup",
+            concept: "Preparing the OS to act as a <strong>Container Host</strong>. This involves installing the Docker Engine daemon and the Compose plugin to orchestrate multi-container applications.",
+            input: "Commands (SSH):\nsudo yum install docker\nsudo service docker start\nsudo usermod -aG docker ec2-user",
+            processName: "OS Configuration",
+            processDesc: "1. Package Manager installs binaries\n2. Daemon starts\n3. User permissions updated",
+            output: "Runtime Ready:\nDocker Version: 24.0.x\nCompose Version: v2.x\nPermission: Rootless",
+            diagram: [
+                "SSH Terminal", "YUM Package Mgr", "Systemd Service", "Docker Ready"
+            ]
+        },
+        deploy: {
+            title: "3. Stack Deployment",
+            concept: "Orchestrating the <strong>Langfuse Platform</strong>. We use a declarative YAML file to pull and run the Web UI, Postgres DB, Redis Cache, and Clickhouse Analytics engine simultaneously.",
+            input: "File: docker-compose.yml\nservices:\n  langfuse: latest\n  db: postgres:15\n  clickhouse: latest",
+            processName: "Docker Compose Up",
+            processDesc: "1. Pulls images from Hub\n2. Creates Internal Network\n3. Mounts Volumes\n4. Starts Containers",
+            output: "Active Services:\nUI: Port 3000\nDB: Port 5432\nStatus: HEALTHY",
+            diagram: [
+                "Compose YAML", "Container Registry", "Network Bridge", "Full Stack Running"
+            ]
+        },
+        network: {
+            title: "4. Network Access (Security Group)",
+            concept: "Modifying the <strong>AWS Security Group</strong> (Firewall) to allow inbound traffic on Port 3000 from the Corporate VPN. This allows you to view the Dashboard and send data from your laptop.",
+            input: "Rule Config:\nType: Custom TCP\nPort: 3000\nSource: 10.x.x.x/16 (VPN CIDR)",
+            processName: "Firewall Update",
+            processDesc: "1. AWS updates VNI rules\n2. Propagates changes instantly",
+            output: "Access Granted:\nVPN User -> http://10.0.x.x:3000\n(Dashboard Accessible)",
+            diagram: [
+                "AWS Console", "Security Group", "Port 3000 Open", "VPN Traffic Allowed"
+            ]
+        },
+        client: {
+            title: "5. Client Integration (Hybrid)",
+            concept: "Connecting your local <strong>Python Application</strong> to the remote EC2 instance. The SDK uses HTTP to send telemetry traces to the Langfuse API running on the server.",
+            input: "Environment Vars (Local):\nLANGFUSE_HOST='http://10.0.x.x:3000'\nLANGFUSE_PUBLIC_KEY='pk-...'",
+            processName: "Telemetry Transmission",
+            processDesc: "1. App initializes SDK\n2. Traces generated locally\n3. Async HTTP POST to EC2",
+            output: "Observability Data:\nTraces visible in Dashboard\nLatency Metrics Captured",
+            diagram: [
+                "Laptop (Python)", "HTTP Request", "VPN Tunnel", "EC2 (Ingestion)"
+            ]
+        }
+    };
+
+    function openModal(id) {
+        const t = data[id];
+        document.getElementById('m-title').innerText = t.title;
+        document.getElementById('m-concept').innerHTML = t.concept;
+        document.getElementById('m-input').innerText = t.input;
+        document.getElementById('m-process-name').innerText = t.processName;
+        document.getElementById('m-process-desc').innerText = t.processDesc;
+        document.getElementById('m-output').innerText = t.output;
+        
+        // Build Diagram Nodes
+        const diagContainer = document.getElementById('m-diagram');
+        diagContainer.innerHTML = '';
+        t.diagram.forEach((node, index) => {
+            const el = document.createElement('div');
+            el.className = index === t.diagram.length - 1 ? 'd-node d-highlight' : 'd-node';
+            el.innerText = node;
+            diagContainer.appendChild(el);
+
+            if (index < t.diagram.length - 1) {
+                const arrow = document.createElement('div');
+                arrow.className = 'd-arrow';
+                arrow.innerText = '➜';
+                diagContainer.appendChild(arrow);
+            }
+        });
+
+        document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    window.onclick = function(e) {
+        if (e.target == document.getElementById('modal')) closeModal();
+    }
+</script>
+
+</body>
+</html>
