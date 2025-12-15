@@ -1,0 +1,226 @@
+Phase 1: Foundation & Hierarchical Tracing - Implementation Guide
+
+Objective
+
+Build the llmops_core middleware package. This "Walking Skeleton" must demonstrate a secure, traced connection between a local Python script and the Langfuse container, supporting Nested Traces (Parent Trace + Child Generation).
+
+1. Directory Structure
+
+Create the following file structure in the project root:
+
+project_root/
+├── .env                 # Local secrets (Add to .gitignore!)
+├── app_example.py       # The Verification Script
+└── llmops_core/         # The Middleware Package
+    ├── __init__.py
+    ├── requirements.txt
+    ├── bootstrap.py     # Secrets Loader
+    ├── sanitizer.py     # PII Logic
+    └── client.py        # Main Class (Logic)
+
+
+2. Implementation Tasks
+
+Task 1: Define Dependencies (requirements.txt)
+
+We pin versions to ensure stability. We require langfuse native SDK to create the Parent Trace container, and litellm to handle the generation logging.
+
+File: llmops_core/requirements.txt
+
+litellm==1.40.2
+langfuse==2.33.0
+python-dotenv==1.0.1
+
+
+Task 2: Security Bootstrap (bootstrap.py)
+
+This module ensures the application fails fast if keys are missing, preventing runtime errors later.
+
+File: llmops_core/bootstrap.py
+
+import os
+from dotenv import load_dotenv
+
+def setup():
+    """
+    Loads environment variables from .env file.
+    Raises an error if critical keys are missing.
+    """
+    load_dotenv() 
+
+    # Verification: Ensure keys exist before app starts
+    required_keys = ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"]
+    missing = [key for key in required_keys if key not in os.environ]
+    
+    if missing:
+        raise EnvironmentError(f"CRITICAL: Missing middleware keys: {missing}")
+        
+    return True
+
+
+Task 3: PII Sanitizer (sanitizer.py)
+
+This pure function ensures no PII leaks into the logs. It runs before the data touches LiteLLM.
+
+File: llmops_core/sanitizer.py
+
+import re
+
+class Sanitizer:
+    # Pattern for SSN: 3 digits, hyphen, 2 digits, hyphen, 4 digits
+    SSN_PATTERN = r"\b\d{3}-\d{2}-\d{4}\b"
+
+    @classmethod
+    def clean(cls, text: str) -> str:
+        """
+        Removes PII from the input string.
+        """
+        if not text:
+            return ""
+            
+        # Replace SSNs with <REDACTED_SSN>
+        clean_text = re.sub(cls.SSN_PATTERN, "<REDACTED_SSN>", text)
+        
+        return clean_text
+
+
+Task 4: The Middleware Interface (client.py)
+
+CRITICAL: This class orchestrates the "Parent-Child" linking. It uses the Native SDK to start the trace and LiteLLM to log the generation.
+
+File: llmops_core/client.py
+
+import os
+import litellm
+from langfuse import Langfuse
+from llmops_core import bootstrap, sanitizer
+
+class MiddlewareClient:
+    _is_initialized = False
+
+    def __init__(self):
+        # 1. Global Initialization (Singleton Pattern)
+        if not MiddlewareClient._is_initialized:
+            bootstrap.setup()
+            
+            # CONFIGURATION: Explicitly tell LiteLLM to use Langfuse
+            # Without this, it ignores the env vars!
+            litellm.success_callback = ["langfuse"]
+            litellm.failure_callback = ["langfuse"]
+            
+            MiddlewareClient._is_initialized = True
+            
+        self.sanitizer = sanitizer.Sanitizer()
+        self.langfuse = Langfuse() # Native client for Parent creation
+
+    def start_trace(self, name: str, user_id: str = None, session_id: str = None):
+        """
+        Starts a 'Root' transaction (Parent Trace).
+        Returns: A Langfuse Trace object that must be passed to children.
+        """
+        return self.langfuse.trace(
+            name=name,
+            user_id=user_id,
+            session_id=session_id
+        )
+
+    def chat(self, message: str, trace=None, model: str = "gpt-3.5-turbo", **kwargs):
+        """
+        Executes an LLM call safely.
+        
+        Args:
+            message: The user prompt.
+            trace: (Optional) The Parent Trace object. If provided, this call is nested.
+            model: The generic model name (e.g., 'gpt-4').
+        """
+        # A. Sanitize Input (Safety First)
+        clean_message = self.sanitizer.clean(message)
+
+        # B. Prepare Metadata
+        metadata = {
+            "middleware_version": "1.0.0",
+            "environment": os.getenv("ENV", "local")
+        }
+
+        # C. HIERARCHY GLUE: Link this call to the Parent Trace 🔗
+        if trace:
+            # LiteLLM looks for 'existing_trace_id' in metadata to attach the generation
+            metadata["existing_trace_id"] = trace.id
+            
+            # Optional: Inherit context if missing
+            if not metadata.get("user_id"): metadata["user_id"] = trace.user_id
+            if not metadata.get("session_id"): metadata["session_id"] = trace.session_id
+
+        # D. Execute (Provider Agnostic)
+        try:
+            return litellm.completion(
+                model=model,
+                messages=[{"role": "user", "content": clean_message}],
+                metadata=metadata, # <--- The Link
+                **kwargs
+            )
+        except Exception as e:
+            # Phase 2 TODO: Add Circuit Breaker fallback here
+            print(f"LLM Error: {e}")
+            raise e
+
+
+3. Verification Plan
+
+Use this script to prove that the hierarchy works and PII is redacted.
+
+File: app_example.py
+
+import time
+from llmops_core.client import MiddlewareClient
+
+def run_test_pipeline():
+    # Initialize Middleware
+    client = MiddlewareClient()
+    print("🚀 Starting Test Pipeline...")
+
+    # 1. Start Parent (The Root)
+    # This creates the "Container" for the whole request
+    root = client.start_trace(
+        name="Phase 1 Verification",
+        user_id="dev_user_01",
+        session_id="test_session_A"
+    )
+
+    # 2. Simulate DB Search (Child Span)
+    # We use the native trace object to time non-LLM work
+    span = root.span(name="Vector DB Lookup")
+    time.sleep(0.3) # Simulate latency
+    span.end()
+    print("✅ Database Search Complete (0.3s)")
+
+    # 3. Call LLM (Child Generation)
+    # The 'trace=root' arg ensures this appears INSIDE the Root in UI
+    print("🤖 Calling LLM...")
+    response = client.chat(
+        message="My SSN is 000-12-3456. Summarize this.",
+        trace=root, # <--- THIS LINKS IT
+        model="gpt-3.5-turbo"
+    )
+    
+    print(f"✅ Response: {response.choices[0].message.content}")
+    print("Waiting for async flush...")
+    time.sleep(2) # Allow async logs to send
+
+if __name__ == "__main__":
+    run_test_pipeline()
+
+
+Steps to Verify
+
+Install: pip install -r llmops_core/requirements.txt
+
+Env: Create .env with your LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY.
+
+Run: python app_example.py
+
+Check UI: Open Langfuse and look for "Phase 1 Verification".
+
+Success: You see one trace with two children (Span + Generation).
+
+Success: The Generation input shows <REDACTED_SSN>.

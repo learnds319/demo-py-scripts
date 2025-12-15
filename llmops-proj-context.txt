@@ -1,0 +1,106 @@
+LLMOps Middleware SDK: Project Context & Architecture
+
+1. Executive Summary
+
+The "LLMOps Core" initiative is a strategic architectural project designed to create a secure, provider-agnostic middleware layer between our internal applications (e.g., "Payer Knowledge") and external AI infrastructure.
+
+Instead of allowing every application to implement its own logging and LLM connections—which leads to security risks, vendor lock-in, and fragmented data—we are building a centralized Middleware SDK.
+
+2. The Problem Statement
+
+As we scale LLM adoption, we face three critical risks:
+
+Operational Fragility (The "Crash" Risk): Direct dependencies on observability tools mean that if the logging platform goes down, the application might crash. Applications currently lack "Circuit Breakers."
+
+Compliance & Safety (The PII Risk): Developers might accidentally log Sensitive PII (SSNs, Member IDs) to external platforms if they are not scrubbing inputs consistently in every single function.
+
+Observability Fragmentation (The "Blind Spot"): Current implementations create "Flat Traces." A database search and a subsequent LLM call appear as two unrelated events, making it impossible to debug end-to-end latency or cost per transaction.
+
+3. The Solution: The "Zone" Architecture
+
+We are implementing a strict Middleware Pattern that isolates responsibilities into three zones.
+
+Zone 1: The Application Layer (Business Logic)
+
+Responsibility: Handles user requests, claims logic, and database queries.
+
+Constraint: NEVER imports litellm or langfuse directly.
+
+Interface: Only interacts with the MiddlewareClient.
+
+Zone 2: The Middleware Layer (The SDK)
+
+Responsibility: The "Plumbing."
+
+Sanitization: Scrubs PII before any data leaves Zone 1.
+
+Context: Manages Trace IDs to ensure "Parent-Child" relationships.
+
+Routing: Delegates to litellm to talk to Azure/AWS.
+
+Resilience: Catches logging errors so the app stays alive.
+
+Zone 3: The External Infrastructure
+
+Services: Azure OpenAI, AWS Bedrock, Langfuse (On-Prem).
+
+Role: Passive receivers of data/requests.
+
+4. Key Architectural Capabilities
+
+A. Hierarchical "Pipeline" Tracing
+
+Unlike simple logging, this middleware supports Distributed Tracing.
+
+The Parent: The app starts a "Root Transaction" (e.g., "RAG Pipeline").
+
+The Children: All subsequent steps (Vector Search, LLM Generation) are explicitly linked to this parent.
+
+The Result: A single "Waterfall" view in Langfuse that shows the exact cost and latency of the entire user interaction.
+
+B. Pre-Flight Sanitization
+
+Safety is not an afterthought. The middleware runs a Regex Sanitizer on the prompt before passing it to the LLM provider or the logging system. This guarantees that raw SSNs never enter our logs.
+
+C. Provider Agnosticism
+
+The application asks for a generic model (e.g., "gpt-4"). The middleware (via LiteLLM) resolves this to specific Azure deployments. This allows us to switch from Azure to AWS or local hosting by changing a configuration file, without rewriting application code.
+
+5. System Data Flow
+
+The following diagram illustrates the lifecycle of a request. Note how the Trace Object is created first and passed down to link the LLM Generation to the Parent.
+
+sequenceDiagram
+    participant App as Application (Zone 1)
+    participant SDK as Middleware SDK (Zone 2)
+    participant Lite as LiteLLM (Zone 2)
+    participant Lang as Langfuse (Zone 3)
+    participant AI as Azure OpenAI (Zone 3)
+
+    Note over App: 1. Start Transaction
+    App->>SDK: start_trace("RAG Pipeline")
+    SDK->>Lang: Create Trace Container
+    Lang-->>SDK: Return trace_id
+    SDK-->>App: Return trace object
+
+    Note over App: 2. Perform Logic
+    App->>App: Database Search (Timed via trace object)
+
+    Note over App: 3. Call LLM
+    App->>SDK: chat(message="My SSN is 999...", trace=trace_obj)
+    
+    Note over SDK: 4. Safety Layer
+    SDK->>SDK: Sanitizer.clean() -> "My SSN is <REDACTED>"
+    
+    Note over SDK: 5. Context Layer
+    SDK->>Lite: completion(msg, metadata={"existing_trace_id": "123"})
+    
+    Note over Lite: 6. Execution Layer
+    Lite->>AI: POST /chat/completions
+    AI-->>Lite: Return "Hello Alice"
+    
+    Note over Lite: 7. Observability Layer (Async)
+    Lite--)Lang: Log Generation (Linked to trace_id "123")
+    
+    Lite-->>SDK: Return Response
+    SDK-->>App: Return Response
