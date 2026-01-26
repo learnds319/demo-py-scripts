@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLMOps Middleware & Langfuse Strategy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .slide { display: none; height: 100vh; overflow-y: auto; }
+        .slide.active { display: flex; flex-direction: column; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .feature-card:hover { transform: scale(1.02); transition: all 0.2s ease; }
+        .timeline-step { position: relative; padding-left: 2rem; border-left: 2px solid #3b82f6; }
+        .timeline-step::before { content: ''; position: absolute; left: -0.55rem; top: 0.25rem; width: 1rem; height: 1rem; background: #3b82f6; border-radius: 50%; }
+    </style>
+</head>
+<body class="gradient-bg text-slate-100 antialiased">
+
+    <!-- Navigation Overlay -->
+    <div class="fixed bottom-8 right-8 flex gap-4 z-50">
+        <button onclick="prevSlide()" class="bg-slate-700/50 hover:bg-blue-600 p-4 rounded-full transition-colors border border-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button onclick="nextSlide()" class="bg-slate-700/50 hover:bg-blue-600 p-4 rounded-full transition-colors border border-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="fixed top-0 left-0 h-1 bg-blue-500 z-50 transition-all duration-300" id="progress"></div>
+
+    <!-- Slide 1: Title -->
+    <section class="slide active p-12 justify-center items-center text-center">
+        <div class="fade-in">
+            <h1 class="text-6xl font-bold mb-6 text-blue-400">LLMOps Mastery</h1>
+            <p class="text-2xl text-slate-400 max-w-2xl mx-auto mb-12">Building a scalable, secure, and provider-agnostic observability layer for Enterprise AI.</p>
+            <div class="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg inline-block">
+                <span class="text-blue-300 font-mono">Middleware SDK v0.1 & Langfuse Integration</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 2: The Foundational Journey (New) -->
+    <section class="slide p-12">
+        <div class="max-w-5xl mx-auto w-full">
+            <h2 class="text-4xl font-bold mb-10 flex items-center gap-4">
+                <span class="bg-blue-600 p-2 rounded">00</span> The Groundwork: Our Journey
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="space-y-8">
+                    <div class="timeline-step">
+                        <h4 class="text-blue-400 font-bold">Cloud Exploration</h4>
+                        <p class="text-sm text-slate-300">Initial assessment of Langfuse Cloud for rapid deployment.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <h4 class="text-yellow-400 font-bold">Consultation (Nov 2025)</h4>
+                        <p class="text-sm text-slate-300">Sync with <strong>Core AI Team</strong>. Discovery: No enterprise license currently active; team is primarily focused on internal POCs.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <h4 class="text-green-400 font-bold">Strategic Pivot</h4>
+                        <p class="text-sm text-slate-300">Decision to move to <strong>On-Prem Langfuse</strong>. Priorities: Data security, full infrastructure control, and immediate autonomy.</p>
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <div class="timeline-step">
+                        <h4 class="text-purple-400 font-bold">Local Validation</h4>
+                        <p class="text-sm text-slate-300">Quick-start POC completed on local laptops using Docker to verify middleware compatibility.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <h4 class="text-indigo-400 font-bold">EC2 Infrastructure</h4>
+                        <p class="text-sm text-slate-300">Successful acquisition of a dedicated <strong>AWS EC2 Instance</strong>. Deployment of self-hosted Langfuse stack.</p>
+                    </div>
+                    <div class="timeline-step border-transparent">
+                        <h4 class="text-pink-400 font-bold">Policy Watch Integration</h4>
+                        <p class="text-sm text-slate-300">Final configuration and instrumentation of the <strong>Policy Watch</strong> pipeline for production-ready observability.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-12 bg-slate-800/50 p-6 rounded-xl border border-slate-700 text-center italic text-slate-400">
+                "Our approach prioritizes security and independence while ensuring full compatibility with future enterprise standards."
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 3: Why Langfuse? -->
+    <section class="slide p-12 justify-center">
+        <div class="max-w-5xl mx-auto w-full">
+            <h2 class="text-4xl font-bold mb-8 flex items-center gap-4">
+                <span class="bg-blue-600 p-2 rounded">01</span> Why Langfuse?
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-slate-800/50 p-8 rounded-xl border border-slate-700">
+                    <h3 class="text-2xl font-bold mb-4 text-blue-300">The Problem</h3>
+                    <ul class="space-y-4 text-slate-300">
+                        <li class="flex gap-2">❌ "Black box" LLM calls</li>
+                        <li class="flex gap-2">❌ No visibility into token costs</li>
+                        <li class="flex gap-2">❌ Impossible to debug nested pipelines</li>
+                        <li class="flex gap-2">❌ Manual evaluation is slow</li>
+                    </ul>
+                </div>
+                <div class="bg-slate-800/50 p-8 rounded-xl border border-slate-700">
+                    <h3 class="text-2xl font-bold mb-4 text-green-300">The Solution</h3>
+                    <ul class="space-y-4 text-slate-300">
+                        <li class="flex gap-2">✅ Open-source & self-hostable</li>
+                        <li class="flex gap-2">✅ Visual Trace debugging</li>
+                        <li class="flex gap-2">✅ Automated cost & latency tracking</li>
+                        <li class="flex gap-2">✅ Integrated Prompt Management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 4: Langfuse Features -->
+    <section class="slide p-12 justify-center bg-slate-900">
+        <div class="max-w-6xl mx-auto w-full text-center">
+            <h2 class="text-4xl font-bold mb-12">Core Features: Visualizing the AI Journey</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-800 p-6 rounded-xl feature-card">
+                    <div class="text-4xl mb-4">📍</div>
+                    <h4 class="text-xl font-bold mb-2">Traces</h4>
+                    <p class="text-sm text-slate-400">One document = One logical journey. See exactly how an input becomes an output.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl feature-card">
+                    <div class="text-4xl mb-4">📂</div>
+                    <h4 class="text-xl font-bold mb-2">Sessions</h4>
+                    <p class="text-sm text-slate-400">Group hundreds of traces into a "Daily Batch" for high-level performance reporting.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl feature-card">
+                    <div class="text-4xl mb-4">🏷️</div>
+                    <h4 class="text-xl font-bold mb-2">Metadata & Tags</h4>
+                    <p class="text-sm text-slate-400">Attach User IDs, Doc IDs, or custom flags to filter and search through millions of logs.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl feature-card">
+                    <div class="text-4xl mb-4">💰</div>
+                    <h4 class="text-xl font-bold mb-2">Cost Analysis</h4>
+                    <p class="text-sm text-slate-400">Automatic token calculation across providers (OpenAI, Anthropic, Azure).</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl feature-card">
+                    <div class="text-4xl mb-4">📖</div>
+                    <h4 class="text-xl font-bold mb-2">Prompt Library</h4>
+                    <p class="text-sm text-slate-400">Version control prompts in the UI. Update prompts without redeploying code.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl feature-card">
+                    <div class="text-4xl mb-4">⭐</div>
+                    <h4 class="text-xl font-bold mb-2">Evaluation</h4>
+                    <p class="text-sm text-slate-400">Record precision, recall, or human feedback scores directly against AI logs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 5: Why Middleware? -->
+    <section class="slide p-12 justify-center">
+        <div class="max-w-4xl mx-auto w-full">
+            <h2 class="text-4xl font-bold mb-8">Why the Middleware SDK?</h2>
+            <p class="text-xl text-slate-400 mb-12">The SDK acts as a "Corporate Shield" between the App and Langfuse.</p>
+            
+            <div class="space-y-6">
+                <div class="flex items-start gap-4 bg-slate-800/80 p-6 rounded-lg border-l-4 border-blue-500">
+                    <div class="bg-blue-500 text-white rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">1</div>
+                    <div>
+                        <h4 class="text-xl font-bold">Zero Dependency Leakage</h4>
+                        <p class="text-slate-400">Application code only imports `llmops_core`. We can swap Langfuse for another tool in 1 day.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 bg-slate-800/80 p-6 rounded-lg border-l-4 border-red-500">
+                    <div class="bg-red-500 text-white rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">2</div>
+                    <div>
+                        <h4 class="text-xl font-bold">Compliance-First (PII Redaction)</h4>
+                        <p class="text-slate-400">SSNs, Emails, and sensitive data are "scrubbed" locally before they ever leave the server.</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 bg-slate-800/80 p-6 rounded-lg border-l-4 border-green-500">
+                    <div class="bg-green-500 text-white rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">3</div>
+                    <div>
+                        <h4 class="text-xl font-bold">Circuit Breaker (Resilience)</h4>
+                        <p class="text-slate-400">If Langfuse is down, the SDK fails silently in < 1ms. The application never crashes.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 6: SDK Deep Dive -->
+    <section class="slide p-12 justify-center">
+        <div class="max-w-6xl mx-auto w-full">
+            <h2 class="text-4xl font-bold mb-8 text-center">Inside the Middleware SDK</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div class="space-y-6">
+                    <h3 class="text-2xl font-bold text-blue-300">Key Components</h3>
+                    <div class="p-4 bg-slate-800 rounded border border-slate-700">
+                        <code class="text-green-400">@traced_pipeline</code>
+                        <p class="text-sm mt-1 text-slate-300">The "Owner". Starts a Trace, manages Session context, and handles cleanup.</p>
+                    </div>
+                    <div class="p-4 bg-slate-800 rounded border border-slate-700">
+                        <code class="text-green-400">@traced_step</code>
+                        <p class="text-sm mt-1 text-slate-300">The "Tenant". Creates Spans inside a pipeline. Gracefully ignores if no trace is active.</p>
+                    </div>
+                    <div class="p-4 bg-slate-800 rounded border border-slate-700">
+                        <code class="text-green-400">continue_pipeline</code>
+                        <p class="text-sm mt-1 text-slate-300">The "Bridge". Resumes traces across On-Prem, ECS, or Serverless functions.</p>
+                    </div>
+                </div>
+                <div class="bg-slate-900 p-8 rounded-xl border border-slate-700 font-mono text-sm">
+                    <div class="text-slate-500 mb-2"># Clean Developer Interface</div>
+                    <div class="text-blue-400">@traced_pipeline</div>(use_case="policy-parsing")<br>
+                    <span class="text-blue-200">def</span> <span class="text-yellow-200">process_document</span>(doc_id):<br>
+                    &nbsp;&nbsp;<span class="text-slate-500"># Middleware handles Trace IDs</span><br>
+                    &nbsp;&nbsp;text = extract_text(doc_id)<br>
+                    &nbsp;&nbsp;summary = analyze(text)<br><br>
+                    <div class="text-blue-400">@traced_step</div>()<br>
+                    <span class="text-blue-200">def</span> <span class="text-yellow-200">extract_text</span>(doc_id):<br>
+                    &nbsp;&nbsp;<span class="text-slate-500"># PII Redacted here automatically</span><br>
+                    &nbsp;&nbsp;<span class="text-blue-200">return</span> llm_call(...)
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 7: Distributed Context -->
+    <section class="slide p-12 justify-center">
+        <div class="max-w-5xl mx-auto w-full text-center">
+            <h2 class="text-4xl font-bold mb-6">Mastering Distributed Tracing</h2>
+            <p class="text-xl text-slate-400 mb-12">Linking On-Prem to ECS without application code changes.</p>
+            
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 p-8 bg-slate-800/50 rounded-2xl border border-slate-700">
+                <div class="flex-1">
+                    <div class="text-lg font-bold">On-Prem (Loader)</div>
+                    <div class="text-xs text-slate-500 font-mono mt-2">session_id = "batch_001"</div>
+                </div>
+                <div class="text-blue-500 text-4xl">➡️</div>
+                <div class="flex-1 bg-blue-500/10 p-4 rounded-lg border border-blue-500/30">
+                    <div class="text-sm font-bold">Env Var Injection</div>
+                    <div class="text-xs text-slate-400 mt-1">LLMOPS_SESSION_ID=batch_001</div>
+                </div>
+                <div class="text-blue-500 text-4xl">➡️</div>
+                <div class="flex-1">
+                    <div class="text-lg font-bold">AWS ECS (Extractor)</div>
+                    <div class="text-xs text-slate-500 font-mono mt-2">Trace linked to "batch_001"</div>
+                </div>
+            </div>
+            <p class="mt-8 text-slate-400 text-sm">Result: Unified view in Langfuse with zero manual ID passing.</p>
+        </div>
+    </section>
+
+    <!-- Slide 8: Next Steps -->
+    <section class="slide p-12 justify-center items-center text-center">
+        <div class="max-w-2xl">
+            <h2 class="text-5xl font-bold mb-12">Next Steps & Deployment</h2>
+            <div class="grid grid-cols-1 gap-4 text-left">
+                <div class="bg-slate-800 p-4 rounded flex gap-4 items-center">
+                    <span class="bg-blue-600 h-6 w-6 rounded-full flex items-center justify-center text-xs">1</span>
+                    <span>Deploy Langfuse Docker on EC2 (Sandbox)</span>
+                </div>
+                <div class="bg-slate-800 p-4 rounded flex gap-4 items-center">
+                    <span class="bg-blue-600 h-6 w-6 rounded-full flex items-center justify-center text-xs">2</span>
+                    <span>Instrument Payer Knowledge Dev Branch</span>
+                </div>
+                <div class="bg-slate-800 p-4 rounded flex gap-4 items-center">
+                    <span class="bg-blue-600 h-6 w-6 rounded-full flex items-center justify-center text-xs">3</span>
+                    <span>Validate PII Redaction with Compliance Team</span>
+                </div>
+                <div class="bg-slate-800 p-4 rounded flex gap-4 items-center">
+                    <span class="bg-blue-600 h-6 w-6 rounded-full flex items-center justify-center text-xs">4</span>
+                    <span>Scale to Coding & Analysis Teams</span>
+                </div>
+            </div>
+            <p class="mt-12 text-slate-500 italic">Ready for MVP Pilot - December 31st Milestone</p>
+        </div>
+    </section>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progress = document.getElementById('progress');
+
+        function updateSlide() {
+            slides.forEach((s, i) => {
+                s.classList.toggle('active', i === currentSlide);
+            });
+            progress.style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+    </script>
+</body>
+</html>

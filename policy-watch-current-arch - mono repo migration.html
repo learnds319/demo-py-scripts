@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Watch | Monorepo Migration Strategy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Toggle Switch Animation */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+        
+        /* Fade In Animation */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Card Hover Effects */
+        .migration-card { transition: all 0.2s ease; }
+        .migration-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+    <!-- Chosen Palette: "Blueprint Blue" (Technical/Architectural feel) with Green for "Recommended" and Amber for "Interim/Risk". -->
+    <!-- Application Structure Plan:
+         1. Global Toggle: A master switch at the top controls the entire dashboard view (Option A vs Option B).
+         2. Grid Layout: Each of the 4 key modules gets a dedicated card.
+         3. Dynamic Content: The content within each card (Tasks, Deps, Risks) updates instantly based on the master toggle.
+         4. Rationale: This allows the user to instantly see the trade-offs. "If we go with Option B, what happens to the Rules Loader?" -> Click, observe change. -->
+    <!-- Visualization & Content Choices:
+         1. Progress Bars: To visualize "Migration Complexity" or "Effort".
+         2. Status Badges: Clear visual cues for "Python Rewrite" vs "Wrapper".
+         3. Checklist: Actionable steps for the migration team. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header & Controls -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="bg-blue-600 text-white p-2 rounded-lg font-bold text-xl">PW</div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">Monorepo Migration Plan</h1>
+                    <p class="text-xs text-slate-500 uppercase tracking-wide">Strategic Roadmap</p>
+                </div>
+            </div>
+
+            <!-- Strategy Toggle -->
+            <div class="flex items-center bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+                <button onclick="setStrategy('A')" id="btn-strat-a" class="px-4 py-2 rounded-md text-sm font-bold shadow-sm transition-all bg-white text-blue-600">
+                    Option A: Cloud Native (Recommended)
+                </button>
+                <button onclick="setStrategy('B')" id="btn-strat-b" class="px-4 py-2 rounded-md text-sm font-bold text-slate-500 hover:text-slate-700 transition-all">
+                    Option B: Hybrid / Interim
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto w-full p-8">
+
+        <!-- Executive Summary Box -->
+        <div id="exec-summary" class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8 fade-in">
+            <div class="flex items-start">
+                <div class="text-3xl mr-4">🚀</div>
+                <div>
+                    <h2 class="text-lg font-bold text-blue-900 mb-1" id="summary-title">Full ECS Migration Strategy</h2>
+                    <p class="text-blue-800 text-sm leading-relaxed" id="summary-desc">
+                        Complete modernization. Migrating all legacy Python and Perl scripts into the Monorepo structure, deploying them as scheduled ECS Fargate tasks, and removing On-Prem dependencies.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Migration Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            <!-- 1. Policy Loader Migration -->
+            <div class="migration-card bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Module 01</span>
+                        <h3 class="text-xl font-bold text-slate-900">Policy Loader</h3>
+                    </div>
+                    <span id="badge-loader" class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full">Rewrite & Replatform</span>
+                </div>
+                
+                <div class="flex-grow space-y-4">
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase">Core Action</h4>
+                        <p class="text-sm font-medium text-slate-800" id="action-loader">
+                            Migrate Scraper to <code>packages/tools/policy_retriever.py</code>
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase">Implementation Steps</h4>
+                        <ul class="space-y-2 text-sm text-slate-600" id="steps-loader">
+                            <!-- Dynamic Content -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <h4 class="text-xs font-bold text-red-400 mb-2 uppercase">Critical Prerequisites</h4>
+                    <div class="text-xs text-slate-500 bg-red-50 p-3 rounded-lg border border-red-100" id="reqs-loader">
+                        <!-- Dynamic Content -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Policy Extractor Migration -->
+            <div class="migration-card bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Module 02</span>
+                        <h3 class="text-xl font-bold text-slate-900">Policy Extractor</h3>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">Lift & Shift + Enhance</span>
+                </div>
+                
+                <div class="flex-grow space-y-4">
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase">Core Action</h4>
+                        <p class="text-sm font-medium text-slate-800">
+                            Migrate to <code>packages/tools/policy_extractor.py</code> as BaseTool
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase">Enhancements</h4>
+                        <ul class="space-y-2 text-sm text-slate-600">
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✓</span> Create shared <code>DocumentParser</code></li>
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✓</span> Add HTML Parsing capability</li>
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✓</span> Implement Multiclass Classification</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <h4 class="text-xs font-bold text-blue-400 mb-2 uppercase">Infrastructure</h4>
+                    <div class="text-xs text-slate-500 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        Replace On-Prem Cron with <strong>EventBridge Schedule</strong>. Ensure ECS Role has access to Secrets Manager (COLAJ_SECRETS).
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Policy Analyzer Migration -->
+            <div class="migration-card bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Module 03</span>
+                        <h3 class="text-xl font-bold text-slate-900">Policy Analyzer</h3>
+                    </div>
+                    <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full">Port to Monorepo</span>
+                </div>
+                
+                <div class="flex-grow space-y-4">
+                    <div class="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase">Core Action</h4>
+                        <p class="text-sm font-medium text-slate-800">
+                            Migrate code to <code>packages/tools/policy_analyzer.py</code>
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase">Implementation Steps</h4>
+                        <ul class="space-y-2 text-sm text-slate-600">
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✓</span> Implement logic to compare Policy Ontology vs Rule Ontology</li>
+                            <li class="flex items-start"><span class="text-green-500 mr-2">✓</span> Verify Top-N Matching logic with LLM</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase">Validation</h4>
+                    <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        Run Perl script and Python implementation with same input to verify <code>rule_impact.json</code> output.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Rules Loader Migration (CRITICAL) -->
+            <div class="migration-card bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col h-full ring-2 ring-indigo-50 border-indigo-100">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Module 04 - Critical</span>
+                        <h3 class="text-xl font-bold text-slate-900">Rules Loader</h3>
+                    </div>
+                    <span id="badge-rules" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded-full">Perl to Python</span>
+                </div>
+                
+                <div class="flex-grow space-y-4">
+                    <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                        <h4 class="text-xs font-bold text-indigo-400 mb-2 uppercase">Core Action</h4>
+                        <p class="text-sm font-medium text-indigo-900" id="action-rules">
+                            Complete Rewrite: Perl -> Python (packages/rules/rules_loader.py)
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-500 mb-2 uppercase">Key Tasks</h4>
+                        <ul class="space-y-2 text-sm text-slate-600" id="steps-rules">
+                            <!-- Dynamic Content -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <h4 class="text-xs font-bold text-indigo-400 mb-2 uppercase">Dependencies</h4>
+                    <div class="text-xs text-slate-500 bg-indigo-50 p-3 rounded-lg border border-indigo-100" id="reqs-rules">
+                        <!-- Dynamic Content -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const strategies = {
+            A: {
+                summaryTitle: "Full ECS Migration Strategy",
+                summaryDesc: "Complete modernization. Migrating all legacy Python and Perl scripts into the Monorepo structure, deploying them as scheduled ECS Fargate tasks, and removing On-Prem dependencies. This is the recommended path for long-term stability and scalability.",
+                loader: {
+                    badge: "Rewrite & Replatform",
+                    badgeColor: "green",
+                    action: "Migrate Scraper to <code>packages/tools/policy_retriever.py</code>",
+                    steps: [
+                        "Implement as BaseTool (tool_id='policy_retriever')",
+                        "Add HTML Scraper capability",
+                        "Deploy as ECS Scheduled Task (EventBridge)",
+                        "Implement Direct S3 Upload (Remove 'Rule File Service')"
+                    ],
+                    reqs: "<strong>Firewall:</strong> Open all payer portal URLs from AWS VPC CIDR.<br><strong>IAM:</strong> Role for S3 & Secrets Manager."
+                },
+                rules: {
+                    badge: "Perl to Python Rewrite",
+                    badgeColor: "indigo",
+                    action: "Complete Rewrite: Perl -> Python (packages/rules/rules_loader.py)",
+                    steps: [
+                        "Analyze Perl logic & Document SQL queries",
+                        "Create <code>AtlasDBClient</code> in <code>preprod/connector</code>",
+                        "Implement as BaseTool",
+                        "Install <code>cx_Oracle</code> in Monorepo"
+                    ],
+                    reqs: "<strong>Network:</strong> VPC Peering/VPN to On-Prem Network.<br><strong>DB:</strong> Atlas DB Creds in Secrets Manager.<br><strong>Access:</strong> Firewall open for Oracle Port 1523."
+                }
+            },
+            B: {
+                summaryTitle: "Hybrid / Interim Strategy",
+                summaryDesc: "A transitional approach that keeps critical execution logic On-Premises while wrapping it in APIs to be called by the Monorepo. This reduces initial migration risk but increases complexity and retains technical debt.",
+                loader: {
+                    badge: "API Wrapper (Hybrid)",
+                    badgeColor: "amber",
+                    action: "Wrap On-Prem Scraper with FastAPI",
+                    steps: [
+                        "Create FastAPI wrapper on On-Prem server",
+                        "Expose Scraper as API endpoint",
+                        "Monorepo tool calls On-Prem API",
+                        "Keep scraping logic On-Prem"
+                    ],
+                    reqs: "<strong>Network:</strong> VPN/Direct Connect between ECS and On-Prem.<br><strong>Ops:</strong> Maintain FastAPI server & SSL certs.<br><strong>Auth:</strong> API Key/OAuth setup."
+                },
+                rules: {
+                    badge: "Python Wrapper (Legacy)",
+                    badgeColor: "amber",
+                    action: "Subprocess Wrapper for Perl Script",
+                    steps: [
+                        "Copy Perl script to Monorepo",
+                        "Create Python wrapper to invoke Perl via <code>subprocess</code>",
+                        "Keep On-Prem Cron implementation",
+                        "Defer full rewrite"
+                    ],
+                    reqs: "<strong>Runtime:</strong> Perl installed in container/environment.<br><strong>Legacy:</strong> Depends on On-Prem server availability."
+                }
+            }
+        };
+
+        function setStrategy(strat) {
+            const data = strategies[strat];
+            const btnA = document.getElementById('btn-strat-a');
+            const btnB = document.getElementById('btn-strat-b');
+
+            // Toggle Button Styles
+            if (strat === 'A') {
+                btnA.className = "px-4 py-2 rounded-md text-sm font-bold shadow-sm transition-all bg-white text-blue-600";
+                btnB.className = "px-4 py-2 rounded-md text-sm font-bold text-slate-500 hover:text-slate-700 transition-all";
+            } else {
+                btnB.className = "px-4 py-2 rounded-md text-sm font-bold shadow-sm transition-all bg-white text-blue-600";
+                btnA.className = "px-4 py-2 rounded-md text-sm font-bold text-slate-500 hover:text-slate-700 transition-all";
+            }
+
+            // Update Summary
+            const summaryBox = document.getElementById('exec-summary');
+            summaryBox.classList.remove('fade-in');
+            void summaryBox.offsetWidth; // trigger reflow
+            summaryBox.classList.add('fade-in');
+
+            document.getElementById('summary-title').innerText = data.summaryTitle;
+            document.getElementById('summary-desc').innerText = data.summaryDesc;
+
+            // Update Loader Card
+            updateCard('loader', data.loader);
+
+            // Update Rules Card
+            updateCard('rules', data.rules);
+        }
+
+        function updateCard(id, data) {
+            document.getElementById(`action-${id}`).innerHTML = data.action;
+            
+            // Badge Logic
+            const badge = document.getElementById(`badge-${id}`);
+            badge.innerText = data.badge;
+            badge.className = `text-xs font-bold px-2 py-1 rounded-full bg-${data.badgeColor}-100 text-${data.badgeColor}-800`;
+
+            // Steps List
+            const stepsList = document.getElementById(`steps-${id}`);
+            stepsList.innerHTML = data.steps.map(step => 
+                `<li class="flex items-start"><span class="text-${data.badgeColor === 'amber' ? 'amber' : 'green'}-500 mr-2">✓</span>${step}</li>`
+            ).join('');
+
+            // Reqs
+            document.getElementById(`reqs-${id}`).innerHTML = data.reqs;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            setStrategy('A');
+        });
+
+    </script>
+</body>
+</html>

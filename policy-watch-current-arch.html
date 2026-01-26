@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Watch | Current Architecture Reference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Chart container constraint */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            height: 250px;
+        }
+
+        /* Animation utilities */
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Module Card active states */
+        .module-card { transition: all 0.3s ease; border-left: 4px solid transparent; }
+        .module-card.active { border-left-color: #3b82f6; background-color: #eff6ff; }
+        
+        /* Timeline line */
+        .timeline-line {
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e2e8f0;
+            z-index: 0;
+        }
+    </style>
+    <!-- Chosen Palette: Corporate Blue/Slate (Professional, Neutral) with distinctive Environment Colors (Gray for On-Prem, Orange for AWS) -->
+    <!-- Application Structure Plan: 
+         1. Split Layout: Left side navigates the five core modules. Right side displays the interactive detail view.
+         2. Visual Hierarchy: "Where it runs" is a primary visual tag. "How it works" is a vertical timeline.
+         3. Rationale: Expanded to include Rules Processor. Maintains the "Reference Manual" educational tone. -->
+    <!-- Visualization & Content Choices:
+         1. Timelines (HTML/CSS): Best for showing the sequential "How it works" steps.
+         2. Environment Badges: Distinct visual cues for On-Prem vs AWS.
+         3. No SVG/Mermaid: All icons are Unicode/Emoji or CSS shapes. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200 z-20 flex-shrink-0">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-slate-800 text-white p-2 rounded-lg font-bold text-lg">PW</div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">Policy Watch</h1>
+                    <p class="text-xs text-slate-500 uppercase tracking-wide">Current State Architecture Reference</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 text-xs text-slate-500">
+                    <span class="w-3 h-3 rounded-full bg-slate-400"></span>
+                    <span>On-Premise</span>
+                </div>
+                <div class="flex items-center space-x-2 text-xs text-slate-500">
+                    <span class="w-3 h-3 rounded-full bg-orange-400"></span>
+                    <span>AWS Cloud</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex max-w-7xl mx-auto w-full overflow-hidden p-6 gap-6">
+        
+        <!-- Left Panel: Module Selector -->
+        <aside class="w-1/3 flex flex-col space-y-4 overflow-y-auto pr-2 pb-6">
+            <div class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">System Modules</div>
+            
+            <!-- Loader Card -->
+            <div onclick="loadModule('loader')" id="card-loader" class="module-card active bg-white p-5 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="bg-slate-100 text-slate-600 p-2 rounded-lg text-2xl">🚜</div>
+                    <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase">On-Premise</span>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Policy Loader</h2>
+                <p class="text-sm text-slate-500 mt-1">Ingestion engine for scraping policy documents.</p>
+                <div class="mt-4 flex items-center text-xs text-slate-400 font-mono">
+                    <span class="mr-2">🕒</span> Every 4 hours
+                </div>
+            </div>
+
+            <!-- Extractor Card -->
+            <div onclick="loadModule('extractor')" id="card-extractor" class="module-card bg-white p-5 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="bg-orange-50 text-orange-600 p-2 rounded-lg text-2xl">⚙️</div>
+                    <span class="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">AWS ECS</span>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Policy Extractor</h2>
+                <p class="text-sm text-slate-500 mt-1">PDF Parsing and Ontology generation.</p>
+                <div class="mt-4 flex items-center text-xs text-slate-400 font-mono">
+                    <span class="mr-2">🕒</span> Every 2 hours
+                </div>
+            </div>
+
+            <!-- Analyzer Card -->
+            <div onclick="loadModule('analyzer')" id="card-analyzer" class="module-card bg-white p-5 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="bg-orange-50 text-orange-600 p-2 rounded-lg text-2xl">🧠</div>
+                    <span class="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">AWS ECS</span>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Policy Analyzer</h2>
+                <p class="text-sm text-slate-500 mt-1">Rule matching and impact analysis.</p>
+                <div class="mt-4 flex items-center text-xs text-slate-400 font-mono">
+                    <span class="mr-2">🕒</span> Every 2 hours
+                </div>
+            </div>
+
+            <!-- Rules Loader Card -->
+            <div onclick="loadModule('rulesLoader')" id="card-rulesLoader" class="module-card bg-white p-5 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="bg-slate-100 text-slate-600 p-2 rounded-lg text-2xl">📋</div>
+                    <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase">On-Premise</span>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Rules Loader</h2>
+                <p class="text-sm text-slate-500 mt-1">Manual rule task processing from Atlas DB.</p>
+                <div class="mt-4 flex items-center text-xs text-slate-400 font-mono">
+                    <span class="mr-2">✋</span> On Demand
+                </div>
+            </div>
+
+            <!-- Rules Processor Card -->
+            <div onclick="loadModule('rulesProcessor')" id="card-rulesProcessor" class="module-card bg-white p-5 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="bg-slate-100 text-slate-600 p-2 rounded-lg text-2xl">🔢</div>
+                    <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase">On-Premise</span>
+                </div>
+                <h2 class="text-lg font-bold text-slate-800">Rules Processor</h2>
+                <p class="text-sm text-slate-500 mt-1">Embedding Generation from JSON.</p>
+                <div class="mt-4 flex items-center text-xs text-slate-400 font-mono">
+                    <span class="mr-2">✋</span> On Demand
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Right Panel: Detailed View -->
+        <section class="w-2/3 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden relative">
+            
+            <!-- Dynamic Content Area -->
+            <div id="detail-view" class="flex-grow overflow-y-auto p-8 fade-in">
+                <!-- Content injected via JS -->
+            </div>
+
+        </section>
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Data Store
+        const modules = {
+            loader: {
+                title: "Policy Loader",
+                subtitle: "Document Acquisition Module",
+                location: "On-Premises Server (Pre-Prod Environment)",
+                locationColor: "slate",
+                description: "The Policy Loader is a Python-based scraping utility designed to monitor specific payer portals. Its primary function is to identify new or updated policy documents (PDFs) and ingest them into the system's storage layer.",
+                schedule: "Cron Job: Every 4 Hours",
+                scheduleNote: "Fixed Interval",
+                tech: [
+                    { name: "Python", type: "Runtime" },
+                    { name: "PostgreSQL", type: "Metadata Store" },
+                    { name: "Rule File Service", type: "Intermediary API" },
+                    { name: "On-Prem Server", type: "Infrastructure" }
+                ],
+                flow: [
+                    {
+                        icon: "🔍",
+                        title: "1. Scrape Portals",
+                        desc: "The script visits target URLs and identifies PDF links using either direct scraping or recursive crawling."
+                    },
+                    {
+                        icon: "📤",
+                        title: "2. Upload via API",
+                        desc: "Found PDFs are sent to the 'Rule File Service', an internal API endpoint."
+                    },
+                    {
+                        icon: "💾",
+                        title: "3. Store in S3",
+                        desc: "The Rule File Service places the physical PDF file into an AWS S3 bucket."
+                    },
+                    {
+                        icon: "📝",
+                        title: "4. Register Metadata",
+                        desc: "A record of the document link is inserted into the <code>payer_policy_documents</code> table in PostgreSQL."
+                    }
+                ]
+            },
+            extractor: {
+                title: "Policy Extractor",
+                subtitle: "Document Processing & Intelligence",
+                location: "AWS Elastic Container Service (ECS)",
+                locationColor: "orange",
+                description: "The Policy Extractor is a containerized Python application that runs 24/7 as an API service. It is responsible for converting raw PDF files into structured, machine-readable JSON formats using Large Language Models.",
+                schedule: "Triggered by Cron: Every 2 Hours",
+                scheduleNote: "Fixed Interval",
+                tech: [
+                    { name: "Python / ECS", type: "Runtime" },
+                    { name: "PyMuPDF", type: "PDF Parsing" },
+                    { name: "GPT-4.1-mini", type: "LLM / AI" },
+                    { name: "S3 & RDS", type: "I/O Storage" }
+                ],
+                flow: [
+                    {
+                        icon: "⚡",
+                        title: "1. Trigger Execution",
+                        desc: "An on-premise Cron job calls the ECS Service API endpoint to initiate the pipeline."
+                    },
+                    {
+                        icon: "📥",
+                        title: "2. Fetch Document",
+                        desc: "The application retrieves the raw PDF file from the designated S3 bucket."
+                    },
+                    {
+                        icon: "📄",
+                        title: "3. Text Extraction",
+                        desc: "<code>pymupdf</code> is used to extract raw text content from the PDF file."
+                    },
+                    {
+                        icon: "🧠",
+                        title: "4. AI Processing",
+                        desc: "The text is sent to the LLM (gpt-4.1-mini) to generate a Billing Score and Ontology."
+                    },
+                    {
+                        icon: "💾",
+                        title: "5. Persist Results",
+                        desc: "The resulting Parsed JSON and Normalized Ontology JSON are saved back to S3."
+                    }
+                ]
+            },
+            analyzer: {
+                title: "Policy Analyzer",
+                subtitle: "Rule Impact Analysis",
+                location: "AWS Elastic Container Service (ECS)",
+                locationColor: "orange",
+                description: "The Policy Analyzer compares the policy ontology (generated by the Extractor) against rule ontology embeddings. It uses GenAI to suggest whether a rule is 'new' or an 'update' based on the top matching rules.",
+                schedule: "Triggered by Cron: Every 2 Hours",
+                scheduleNote: "Fixed Interval",
+                tech: [
+                    { name: "Python / ECS", type: "Runtime" },
+                    { name: "Bitbucket", type: "policy-analyzer" },
+                    { name: "LLM", type: "Comparison Logic" },
+                    { name: "S3", type: "Impact JSON Store" }
+                ],
+                flow: [
+                    {
+                        icon: "⚖️",
+                        title: "1. Ontology Comparison",
+                        desc: "Compares Policy Ontology JSON with Rule Ontology embeddings stored in the database."
+                    },
+                    {
+                        icon: "🔝",
+                        title: "2. Fetch Top Matches",
+                        desc: "Retrieves the Top N matching rules from the database based on vector similarity."
+                    },
+                    {
+                        icon: "🤖",
+                        title: "3. LLM Suggestion",
+                        desc: "LLM analyzes the match and suggests if the rule is 'new' or an 'update'."
+                    },
+                    {
+                        icon: "📊",
+                        title: "4. Generate Impact",
+                        desc: "Creates <code>rule_impact.json</code> with metrics and scores, storing it in S3 and updating the summary table."
+                    }
+                ]
+            },
+            rulesLoader: {
+                title: "Rules Loader",
+                subtitle: "Legacy Rule Migration",
+                location: "On-Premises Server (Pre-Prod)",
+                locationColor: "slate",
+                description: "The Rules Loader is a legacy Perl script designed to process manual rule updates. It fetches completed tasks from the Atlas DB (Oracle) and consolidates rule specifications into JSON for S3 storage.",
+                schedule: "On Demand / Manual",
+                scheduleNote: "Invoked Manually",
+                tech: [
+                    { name: "Perl", type: "Legacy Runtime" },
+                    { name: "Oracle (Atlas DB)", type: "Source DB" },
+                    { name: "Rule File Service", type: "Intermediary API" },
+                    { name: "S3", type: "Output Storage" }
+                ],
+                flow: [
+                    {
+                        icon: "📝",
+                        title: "1. Fetch Tasks",
+                        desc: "Retrieves BRIDs (Business Requirement IDs) from completed tasks in the Atlas DB (Oracle)."
+                    },
+                    {
+                        icon: "📋",
+                        title: "2. Get Specifications",
+                        desc: "Fetches detailed Rule Specifications from the business requirement table using the BRIDs."
+                    },
+                    {
+                        icon: "📦",
+                        title: "3. Consolidate JSON",
+                        desc: "Aggregates all rule specs into a single Consolidated JSON structure."
+                    },
+                    {
+                        icon: "☁️",
+                        title: "4. Upload to S3",
+                        desc: "Uploads the final JSON to S3 via the internal 'Rules File Service' API."
+                    }
+                ]
+            },
+            rulesProcessor: {
+                title: "Rules Processor",
+                subtitle: "Embedding Generation",
+                location: "On-Premises (Script)",
+                locationColor: "slate",
+                description: "The Rules Processor is responsible for the 'One-time dump' or on-demand processing of rule data. It bridges the gap between raw rule specifications and the Policy Analyzer by generating vector embeddings.",
+                schedule: "On Demand / Manual",
+                scheduleNote: "One-time / Manual",
+                tech: [
+                    { name: "Bitbucket", type: "ruleprocessor" },
+                    { name: "S3", type: "Input Source" },
+                    { name: "Embeddings", type: "ML/AI" },
+                    { name: "PostgreSQL", type: "Target DB" }
+                ],
+                flow: [
+                    {
+                        icon: "📥",
+                        title: "1. Fetch JSON",
+                        desc: "Retrieves the Consolidated Rule JSON (from Rules Loader) from S3."
+                    },
+                    {
+                        icon: "🧠",
+                        title: "2. Create Embeddings",
+                        desc: "Generates Ontology and Vector Embeddings from the rule data."
+                    },
+                    {
+                        icon: "💾",
+                        title: "3. Populate DB",
+                        desc: "Populates the <code>rule_conversion</code> table with the generated ontology and embeddings."
+                    }
+                ]
+            }
+        };
+
+        function loadModule(moduleId) {
+            const data = modules[moduleId];
+            
+            // Update Sidebar State
+            document.querySelectorAll('.module-card').forEach(el => {
+                el.classList.remove('active', 'border-l-blue-500', 'bg-blue-50');
+            });
+            document.getElementById(`card-${moduleId}`).classList.add('active');
+
+            // Render Detail View
+            const container = document.getElementById('detail-view');
+            
+            // Location Badge Color Logic
+            const locBg = data.locationColor === 'orange' ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-800';
+
+            // Tech Stack Chips
+            const techHtml = data.tech.map(t => 
+                `<div class="flex items-center space-x-2 bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm">
+                    <span class="font-bold text-slate-700">${t.name}</span>
+                    <span class="text-xs text-slate-400 border-l border-slate-200 pl-2 ml-1">${t.type}</span>
+                 </div>`
+            ).join('');
+
+            // Timeline HTML
+            const timelineHtml = data.flow.map((step, index) => `
+                <div class="relative pl-10 pb-10 last:pb-0">
+                    <!-- Timeline Dot -->
+                    <div class="absolute left-0 top-0 bg-white border-2 border-blue-500 rounded-full w-12 h-12 flex items-center justify-center z-10 shadow-sm">
+                        <span class="text-xl">${step.icon}</span>
+                    </div>
+                    <!-- Content -->
+                    <div class="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                        <h4 class="font-bold text-slate-800 text-base mb-1">${step.title}</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">${step.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            // Full Render
+            container.innerHTML = `
+                <div class="animate-fade-in">
+                    <!-- Header -->
+                    <div class="mb-8">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <h2 class="text-3xl font-bold text-slate-900">${data.title}</h2>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${locBg}">
+                                ${data.location}
+                            </span>
+                        </div>
+                        <p class="text-lg text-slate-500">${data.description}</p>
+                    </div>
+
+                    <!-- Tech Stack Grid -->
+                    <div class="mb-10">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Technology Stack</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            ${techHtml}
+                        </div>
+                    </div>
+
+                    <!-- Schedule & Flow Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        
+                        <!-- Timeline Column -->
+                        <div class="lg:col-span-2">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-5">Process Workflow</h3>
+                            <div class="relative">
+                                <div class="timeline-line"></div>
+                                ${timelineHtml}
+                            </div>
+                        </div>
+
+                        <!-- Schedule Column -->
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Scheduling</h3>
+                            <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm text-center">
+                                <div class="text-4xl mb-2">⏱️</div>
+                                <div class="text-slate-800 font-bold mb-1">${data.schedule}</div>
+                                <div class="text-xs text-slate-500">${data.scheduleNote}</div>
+                                <div class="w-full bg-slate-100 rounded-full h-2 mt-4 overflow-hidden">
+                                    <div class="bg-blue-500 h-full w-3/4 rounded-full"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <h4 class="text-blue-900 font-bold text-xs mb-2">INTEGRATION CONTEXT</h4>
+                                <p class="text-xs text-blue-800">
+                                    ${getIntegrationContext(moduleId)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getIntegrationContext(id) {
+            const contexts = {
+                loader: "Outputs to <strong>PostgreSQL</strong> (Metadata) and <strong>S3</strong> (File content) for the Extractor to pick up.",
+                extractor: "Inputs from <strong>S3</strong> (PDFs) and updates <strong>PostgreSQL</strong> with billing scores and ontology.",
+                analyzer: "Compares <strong>Policy Ontology</strong> (JSON) with <strong>Rule Ontology</strong> (Embeddings) to drive validation.",
+                rulesLoader: "Extracts legacy tasks from <strong>Oracle</strong> and pushes consolidated JSON to <strong>S3</strong> for processing.",
+                rulesProcessor: "Bridges the gap between <strong>Rules Loader</strong> and <strong>Analyzer</strong> by converting raw JSON into queryable <strong>Embeddings</strong>."
+            };
+            return contexts[id];
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadModule('loader');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Watch | Modernization Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .component-btn { transition: all 0.2s ease; }
+        .component-btn:hover { background-color: #f1f5f9; }
+        .component-btn.active { background-color: #eff6ff; border-left-color: #3b82f6; color: #1e40af; }
+
+        .metric-card { transition: transform 0.2s; }
+        .metric-card:hover { transform: translateY(-2px); }
+
+        /* Journey Arrow */
+        .arrow-right {
+            position: relative;
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-top: 2px solid #cbd5e1;
+            border-right: 2px solid #cbd5e1;
+            transform: rotate(45deg);
+        }
+    </style>
+    <!-- Application Structure: 
+         1. "Strategic Context" Header: High-level executive summary metrics.
+         2. "Transformation Engine": The core interactive area.
+            - Left Sidebar: Component Navigation (Loader, Extractor, Analyzer, Rules).
+            - Main Stage: A unified "Before & After" view.
+              - Left Panel: As-Is State (Legacy/On-Prem).
+              - Center: Transition Strategy (The "How").
+              - Right Panel: To-Be State (Monorepo/Cloud).
+         3. "Strategy Controls": Option A/B toggles appear dynamically for relevant components.
+    -->
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-1.5 rounded-lg font-bold text-lg">PW</div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900">Policy Watch Modernization</h1>
+                    <p class="text-xs text-slate-500 uppercase tracking-wide">Migration Command Center</p>
+                </div>
+            </div>
+            <div class="flex space-x-6 text-sm">
+                 <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <span class="text-slate-500">Legacy</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    <span class="text-indigo-600 font-medium">Cloud Native</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full p-6">
+        
+        <!-- Executive Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="metric-card bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Architecture</div>
+                <div class="flex items-baseline space-x-2">
+                    <h3 class="text-2xl font-bold text-indigo-600">Monorepo</h3>
+                    <span class="text-xs text-slate-500">Unified Tooling</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Consolidating 5 disparate modules into a single domain standard.</p>
+            </div>
+            <div class="metric-card bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Infrastructure</div>
+                <div class="flex items-baseline space-x-2">
+                    <h3 class="text-2xl font-bold text-green-600">100% ECS</h3>
+                    <span class="text-xs text-slate-500">Fargate Tasks</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Removing On-Prem dependencies and manual cron jobs.</p>
+            </div>
+             <div class="metric-card bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Reliability</div>
+                <div class="flex items-baseline space-x-2">
+                    <h3 class="text-2xl font-bold text-blue-600">Event Driven</h3>
+                    <span class="text-xs text-slate-500">EventBridge</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">Replacing idle 24/7 services with cost-efficient scheduled tasks.</p>
+            </div>
+        </div>
+
+        <!-- Interactive Transformation Engine -->
+        <div class="flex flex-col lg:flex-row bg-white rounded-2xl shadow-xl border border-slate-200 min-h-[600px] overflow-hidden">
+            
+            <!-- Sidebar: Component Selector -->
+            <aside class="w-full lg:w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
+                <div class="p-4 border-b border-slate-200">
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Component</h2>
+                </div>
+                <nav class="flex-grow py-2 space-y-1">
+                    <button onclick="loadComponent('loader')" id="btn-loader" class="component-btn active w-full text-left px-4 py-3 border-l-4 border-transparent flex items-center justify-between">
+                        <span class="font-medium text-sm">Policy Loader</span>
+                        <span class="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">Scraper</span>
+                    </button>
+                    <button onclick="loadComponent('extractor')" id="btn-extractor" class="component-btn w-full text-left px-4 py-3 border-l-4 border-transparent flex items-center justify-between text-slate-600">
+                        <span class="font-medium text-sm">Policy Extractor</span>
+                        <span class="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">Parser</span>
+                    </button>
+                    <button onclick="loadComponent('analyzer')" id="btn-analyzer" class="component-btn w-full text-left px-4 py-3 border-l-4 border-transparent flex items-center justify-between text-slate-600">
+                        <span class="font-medium text-sm">Policy Analyzer</span>
+                        <span class="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">Logic</span>
+                    </button>
+                     <div class="pt-4 pb-1 px-4">
+                        <div class="border-t border-slate-200"></div>
+                    </div>
+                    <button onclick="loadComponent('rules')" id="btn-rules" class="component-btn w-full text-left px-4 py-3 border-l-4 border-transparent flex items-center justify-between text-slate-600">
+                        <span class="font-medium text-sm">Rules Loader</span>
+                        <span class="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">Critical</span>
+                    </button>
+                    <button onclick="loadComponent('processor')" id="btn-processor" class="component-btn w-full text-left px-4 py-3 border-l-4 border-transparent flex items-center justify-between text-slate-600">
+                        <span class="font-medium text-sm">Rules Processor</span>
+                        <span class="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">Process</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- Main Stage: Transformation View -->
+            <section class="flex-grow p-8 bg-white relative">
+                
+                <!-- Dynamic Header -->
+                <div class="flex justify-between items-center mb-8 pb-4 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800" id="main-title">Policy Loader Migration</h2>
+                        <p class="text-sm text-slate-500" id="main-desc">Transitioning from On-Prem Scraper to Cloud-Native ECS Task.</p>
+                    </div>
+                    
+                    <!-- Dynamic Strategy Toggle (Only visible for Loader & Rules) -->
+                    <div id="strategy-control" class="hidden flex items-center bg-slate-100 p-1 rounded-lg">
+                        <button onclick="toggleStrategy('A')" id="strat-btn-a" class="px-3 py-1.5 rounded text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm">Option A: Rewrite</button>
+                        <button onclick="toggleStrategy('B')" id="strat-btn-b" class="px-3 py-1.5 rounded text-xs font-bold transition-all text-slate-500 hover:text-slate-700">Option B: Hybrid</button>
+                    </div>
+                </div>
+
+                <!-- Transformation Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-7 gap-6 h-full pb-10 fade-in" id="content-area">
+                    
+                    <!-- 1. AS-IS COLUMN -->
+                    <div class="md:col-span-3 bg-slate-50 rounded-xl border border-slate-200 p-5 flex flex-col relative group">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-slate-300 rounded-t-xl"></div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-600">Current State (Legacy)</h3>
+                            <span class="text-[10px] font-mono bg-slate-200 px-2 py-1 rounded text-slate-600">AS-IS</span>
+                        </div>
+                        
+                        <div class="space-y-4 flex-grow">
+                             <!-- Visual Tech Stack -->
+                            <div class="flex space-x-2 mb-4" id="legacy-stack">
+                                <!-- Injected via JS -->
+                            </div>
+                            
+                            <!-- Key Pain Points -->
+                            <div class="bg-white p-3 rounded border border-slate-100 shadow-sm">
+                                <h4 class="text-xs font-bold text-red-500 mb-2 uppercase flex items-center">
+                                    <span class="mr-1">⚠️</span> Architecture Risks
+                                </h4>
+                                <ul class="space-y-2 text-xs text-slate-600" id="legacy-risks">
+                                    <!-- Injected via JS -->
+                                </ul>
+                            </div>
+
+                            <div class="bg-white p-3 rounded border border-slate-100 shadow-sm">
+                                <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase">Workflow</h4>
+                                <p class="text-xs text-slate-600 leading-relaxed" id="legacy-workflow">
+                                    <!-- Injected via JS -->
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. TRANSITION COLUMN (Arrow) -->
+                    <div class="md:col-span-1 flex flex-col items-center justify-center space-y-4">
+                        <div class="w-px h-full bg-gradient-to-b from-transparent via-slate-200 to-transparent absolute z-0 hidden md:block"></div>
+                        <div class="z-10 bg-white p-2 rounded-full border border-slate-200 shadow-sm text-slate-400">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </div>
+                         <div class="z-10 bg-indigo-50 px-2 py-1 rounded text-[10px] font-bold text-indigo-600 uppercase tracking-wide border border-indigo-100">
+                            Migration
+                        </div>
+                    </div>
+
+                    <!-- 3. TO-BE COLUMN -->
+                    <div class="md:col-span-3 bg-indigo-50/50 rounded-xl border border-indigo-100 p-5 flex flex-col relative">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-indigo-500 rounded-t-xl"></div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-indigo-900">Target State (Monorepo)</h3>
+                            <span class="text-[10px] font-mono bg-indigo-100 px-2 py-1 rounded text-indigo-700">TO-BE</span>
+                        </div>
+
+                        <div class="space-y-4 flex-grow">
+                            <!-- Visual Tech Stack -->
+                            <div class="flex space-x-2 mb-4" id="target-stack">
+                                <!-- Injected via JS -->
+                            </div>
+
+                            <!-- Key Actions -->
+                            <div class="bg-white p-3 rounded border border-indigo-100 shadow-sm ring-1 ring-indigo-50">
+                                <h4 class="text-xs font-bold text-indigo-600 mb-2 uppercase flex items-center">
+                                    <span class="mr-1">🚀</span> Implementation Plan
+                                </h4>
+                                <ul class="space-y-2 text-xs text-slate-600" id="target-actions">
+                                    <!-- Injected via JS -->
+                                </ul>
+                            </div>
+
+                             <!-- Dependencies -->
+                            <div class="bg-indigo-100/50 p-3 rounded border border-indigo-100">
+                                <h4 class="text-xs font-bold text-indigo-800 mb-1 uppercase">Prerequisites</h4>
+                                <p class="text-xs text-indigo-700 leading-relaxed" id="target-deps">
+                                    <!-- Injected via JS -->
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // --- DATA STORE ---
+        const components = {
+            loader: {
+                title: "Policy Loader",
+                desc: "Transitioning from On-Prem Scraper to Cloud-Native ECS Task.",
+                strategyControl: true,
+                legacy: {
+                    stack: ["Python", "On-Prem Server", "Cron (4h)", "PostgreSQL"],
+                    risks: [
+                        "Indirect S3 Upload (Rule File Service Anti-Pattern)",
+                        "Dependency on Pre-Prod Server availability",
+                        "IP Reputation/Blocking risk from On-Prem IP"
+                    ],
+                    workflow: "Scrapes links -> Sends to API -> API puts to S3 -> DB Update."
+                },
+                target: {
+                    A: {
+                        stack: ["Monorepo Tool", "ECS Fargate", "EventBridge", "Direct S3"],
+                        actions: [
+                            "Migrate code to <code>packages/tools/policy_retriever.py</code>",
+                            "Implement <code>BaseTool</code> interface",
+                            "Add HTML Scraping capability",
+                            "Implement Direct S3 Upload (Bypass API)"
+                        ],
+                        deps: "Open Firewall for Payer Portals from ECS VPC. IAM Roles for S3/Secrets."
+                    },
+                    B: {
+                        stack: ["FastAPI Wrapper", "On-Prem Server", "Monorepo Client"],
+                        actions: [
+                            "Wrap existing scraper in FastAPI on On-Prem server",
+                            "Monorepo tool calls this On-Prem API",
+                            "Retain legacy scraping logic"
+                        ],
+                        deps: "VPN/Direct Connect between AWS & On-Prem. Auth setup for API."
+                    }
+                }
+            },
+            extractor: {
+                title: "Policy Extractor",
+                desc: "Optimizing compute efficiency and consolidating parsing logic.",
+                strategyControl: false,
+                legacy: {
+                    stack: ["ECS Service (24/7)", "Cron Trigger", "PyMuPDF"],
+                    risks: [
+                        "Cost Inefficiency (Idle 90% of the time)",
+                        "Limited to PDF only (No HTML support)",
+                        "Triggered by On-Prem dependency"
+                    ],
+                    workflow: "API Trigger -> Fetch PDF from S3 -> Parse -> LLM -> Save JSON."
+                },
+                target: {
+                    A: { // Single Option
+                        stack: ["ECS Scheduled Task", "BaseTool", "DocumentParser"],
+                        actions: [
+                            "Migrate to <code>packages/tools/policy_extractor.py</code>",
+                            "Create shared <code>DocumentParser</code> (HTML+PDF)",
+                            "Replace On-Prem Cron with EventBridge Schedule",
+                            "Implement Multiclass Classification"
+                        ],
+                        deps: "Secrets Manager access. EventBridge Rule creation."
+                    }
+                }
+            },
+            analyzer: {
+                title: "Policy Analyzer",
+                desc: "Porting analysis logic to Monorepo standards.",
+                strategyControl: false,
+                legacy: {
+                    stack: ["ECS Service", "Cron Trigger", "Bitbucket Repo"],
+                    risks: [
+                        "Codebase separation (Different repo)",
+                        "Implicit dependencies on Rule Ontology"
+                    ],
+                    workflow: "Fetch Ontology -> Compare vs Rules (Embeddings) -> LLM -> Impact JSON."
+                },
+                target: {
+                    A: {
+                        stack: ["Monorepo Tool", "ECS Task", "Shared LLM Client"],
+                        actions: [
+                            "Port code to <code>packages/tools/policy_analyzer.py</code>",
+                            "Verify Top-N Matching Logic",
+                            "Standardize logging and error handling"
+                        ],
+                        deps: "Verify Rule Ontology Embedding availability in RDS."
+                    }
+                }
+            },
+            rules: {
+                title: "Rules Loader",
+                desc: "Modernizing legacy Perl scripts to Python.",
+                strategyControl: true,
+                legacy: {
+                    stack: ["Perl Script", "Oracle (Atlas DB)", "Manual Trigger"],
+                    risks: [
+                        "Legacy Language (Perl) maintenance risk",
+                        "Manual execution (Human dependency)",
+                        "Direct dependency on Oracle DB availability"
+                    ],
+                    workflow: "Fetch Task (Oracle) -> Consolidate Specs -> JSON -> Upload to S3."
+                },
+                target: {
+                    A: {
+                        stack: ["Python Rewrite", "ECS Fargate", "cx_Oracle"],
+                        actions: [
+                            "Rewrite Perl logic to Python in <code>packages/rules</code>",
+                            "Create <code>AtlasDBClient</code> connector",
+                            "Automate schedule via EventBridge"
+                        ],
+                        deps: "VPC Peering to On-Prem. Firewall for Oracle Port 1523. DB Creds."
+                    },
+                    B: {
+                        stack: ["Python Wrapper", "Perl Subprocess", "On-Prem"],
+                        actions: [
+                            "Copy Perl script to Monorepo",
+                            "Wrap execution in Python `subprocess`",
+                            "Defer full rewrite"
+                        ],
+                        deps: "Perl runtime in container. Network access to Oracle."
+                    }
+                }
+            },
+            processor: {
+                title: "Rules Processor",
+                desc: "Automating Embedding Generation from JSON.",
+                strategyControl: false,
+                legacy: {
+                    stack: ["Manual Invocation", "On-Prem Script", "S3 Input"],
+                    risks: [
+                        "Manual Trigger is error prone",
+                        "Latency in update cycle",
+                        "Opaque execution status"
+                    ],
+                    workflow: "Read JSON (S3) -> Generate Embeddings -> Write to DB."
+                },
+                target: {
+                    A: {
+                        stack: ["ECS Task", "EventBridge", "BaseTool"],
+                        actions: [
+                            "Migrate to <code>packages/tools/rules_processor.py</code>",
+                            "Implement as <code>BaseTool</code>",
+                            "EventBridge Trigger: On 'Rules Loader' Success",
+                            "Direct DB write for Embeddings"
+                        ],
+                        deps: "S3 Read Access. RDS Write Access."
+                    }
+                }
+            }
+        };
+
+        // --- STATE ---
+        let currentComponent = 'loader';
+        let currentStrategy = 'A';
+
+        function loadComponent(id) {
+            currentComponent = id;
+            
+            // 1. Update Sidebar UI
+            document.querySelectorAll('.component-btn').forEach(btn => {
+                btn.classList.remove('active', 'border-l-4', 'border-blue-500', 'bg-eff6ff');
+                btn.classList.add('text-slate-600', 'border-transparent');
+            });
+            const activeBtn = document.getElementById(`btn-${id}`);
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('text-slate-600', 'border-transparent');
+
+            // 2. Update Header Content
+            const data = components[id];
+            document.getElementById('main-title').innerText = data.title;
+            document.getElementById('main-desc').innerText = data.desc;
+
+            // 3. Toggle Strategy Controls
+            const stratControl = document.getElementById('strategy-control');
+            if (data.strategyControl) {
+                stratControl.classList.remove('hidden');
+                // Reset strategy button styles
+                toggleStrategy(currentStrategy); 
+            } else {
+                stratControl.classList.add('hidden');
+                renderContent(id, 'A'); // Default to A for single-option components
+            }
+
+            // 4. Render Content
+            if (data.strategyControl) {
+                renderContent(id, currentStrategy);
+            }
+        }
+
+        function toggleStrategy(opt) {
+            currentStrategy = opt;
+            
+            // Update Buttons
+            const btnA = document.getElementById('strat-btn-a');
+            const btnB = document.getElementById('strat-btn-b');
+            
+            if (opt === 'A') {
+                btnA.className = "px-3 py-1.5 rounded text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm border border-slate-200";
+                btnB.className = "px-3 py-1.5 rounded text-xs font-bold transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200";
+            } else {
+                btnB.className = "px-3 py-1.5 rounded text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm border border-slate-200";
+                btnA.className = "px-3 py-1.5 rounded text-xs font-bold transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200";
+            }
+
+            // Re-render
+            renderContent(currentComponent, opt);
+        }
+
+        function renderContent(id, strategy) {
+            const data = components[id];
+            const targetData = data.target[strategy] || data.target.A; // Fallback to A if only one option
+
+            // Animation Reset
+            const contentArea = document.getElementById('content-area');
+            contentArea.classList.remove('fade-in');
+            void contentArea.offsetWidth; // Trigger reflow
+            contentArea.classList.add('fade-in');
+
+            // --- RENDER LEGACY ---
+            document.getElementById('legacy-stack').innerHTML = data.legacy.stack.map(tech => 
+                `<span class="text-[10px] bg-slate-200 text-slate-700 px-2 py-1 rounded font-medium border border-slate-300">${tech}</span>`
+            ).join('');
+            
+            document.getElementById('legacy-risks').innerHTML = data.legacy.risks.map(risk => 
+                `<li class="flex items-start"><span class="text-red-400 mr-2">•</span>${risk}</li>`
+            ).join('');
+            
+            document.getElementById('legacy-workflow').innerText = data.legacy.workflow;
+
+
+            // --- RENDER TARGET ---
+            // Visual Stack (Changes color based on Strat)
+            const themeColor = strategy === 'A' ? 'indigo' : 'amber';
+            const themeBg = strategy === 'A' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' : 'bg-amber-100 text-amber-800 border-amber-200';
+            
+            document.getElementById('target-stack').innerHTML = targetData.stack.map(tech => 
+                `<span class="text-[10px] ${themeBg} px-2 py-1 rounded font-medium border">${tech}</span>`
+            ).join('');
+
+            document.getElementById('target-actions').innerHTML = targetData.actions.map(action => 
+                `<li class="flex items-start"><span class="text-${themeColor}-500 mr-2">✓</span>${action}</li>`
+            ).join('');
+
+            document.getElementById('target-deps').innerHTML = targetData.deps;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadComponent('loader');
+        });
+
+    </script>
+</body>
+</html>
