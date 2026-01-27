@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Watch | Architecture & Migration Strategy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Tech Blue & Slate (Professional/AWS-aligned) -->
+    <!-- Application Structure Plan:
+         1. Executive Dashboard: High-level metrics visualization showing the Hybrid Architecture (On-Prem + Cloud).
+         2. Component Navigator: 5-card grid allowing selection of each module.
+         3. Comparison Engine: Dynamic detail view showing "As-Is" vs "Hybrid Strategy" (API Wrappers).
+         4. Orchestration Flow: Visualizing the Step Functions workflow orchestrating Remote On-Prem Triggers.
+         5. Risk & Prerequisites: Checklist for Hybrid Connectivity (VPN/Direct Connect).
+    -->
+    <!-- Visualization & Content Choices:
+         1. Charts: Doughnut for Hybrid Infrastructure Mix and Bar for Event-Driven Frequency.
+         2. CSS Grid/Flex: Used for the Orchestration Flowchart.
+         3. Dynamic Text: JS updates content to keep the page single-file.
+         4. Confirming NO SVG/Mermaid: All icons are Unicode or CSS shapes.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Animation Classes */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .slide-in-right { animation: slideInRight 0.3s ease-out forwards; }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Chart Container Styling - MANDATORY */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        /* Interactive Elements */
+        .module-card {
+            transition: all 0.2s ease;
+        }
+        .module-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .module-card.active {
+            border-color: #f59e0b; /* Amber for Hybrid focus */
+            background-color: #fffbeb;
+        }
+
+        .step-node {
+            transition: all 0.3s ease;
+        }
+        .step-node.active-step {
+            background-color: #fffbeb;
+            border-color: #f59e0b;
+            transform: scale(1.02);
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navigation / Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-600 text-white p-1.5 rounded-lg font-bold">PW</div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-none">Policy Watch</h1>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">Hybrid Migration Command Center</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">Strategic Decision: Hybrid</span>
+                <span class="text-sm text-slate-500">Oct 26, 2023</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12">
+
+        <!-- Section 1: Executive Summary & Metrics -->
+        <section class="animate-fade-in">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Executive Summary</h2>
+                <p class="text-slate-600 max-w-3xl mt-2">
+                    Policy Watch will adopt a <strong>Hybrid Architecture</strong>. Critical data acquisition (Scrapers/Rules) will <strong>remain On-Premises</strong> to leverage existing network trust and legacy stability. 
+                    Intelligence extraction (Extractor/Analyzer) remains <strong>Cloud-Native (ECS)</strong>. 
+                    Orchestration will bridge the gap via <strong>API Wrappers</strong>.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Metric Card 1: Infrastructure Shift -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Infrastructure Mix</h3>
+                    <div class="chart-container flex-grow">
+                        <canvas id="infraChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-slate-400 mt-2">Target: 40% On-Prem (Wrappers) / 60% Cloud</p>
+                </div>
+
+                <!-- Metric Card 2: Scheduling Paradigm -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Orchestration Model</h3>
+                    <div class="chart-container flex-grow">
+                        <canvas id="scheduleChart"></canvas>
+                    </div>
+                    <p class="text-xs text-center text-slate-400 mt-2">Unified Event-Driven Control Plane</p>
+                </div>
+
+                <!-- Metric Card 3: Key Objectives -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Hybrid Goals</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm">1</span>
+                            <span class="text-sm font-medium text-slate-700">Retain On-Prem Scrapers (IP Trust)</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">2</span>
+                            <span class="text-sm font-medium text-slate-700">Centralize Orchestration (Step Functions)</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">3</span>
+                            <span class="text-sm font-medium text-slate-700">Wrap Legacy Scripts in APIs</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-sm">4</span>
+                            <span class="text-sm font-medium text-slate-700">Maintain Legacy DB Connectivity</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Interactive Component Migration Map -->
+        <section id="components" class="scroll-mt-20">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Component Migration Map</h2>
+                    <p class="text-sm text-slate-500">Select a module to view its Hybrid Migration Strategy.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Left: Selector Grid -->
+                <div class="lg:col-span-4 grid grid-cols-1 gap-4">
+                    <!-- JS will populate these buttons -->
+                    <div id="moduleSelector" class="space-y-3">
+                        <!-- Module Buttons Injected Here -->
+                    </div>
+                </div>
+
+                <!-- Right: Comparison Detail View -->
+                <div class="lg:col-span-8">
+                    <div id="detailView" class="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden h-full flex flex-col slide-in-right">
+                        <!-- Dynamic Content Injected Here -->
+                        <div class="p-12 flex flex-col items-center justify-center text-center h-full text-slate-400">
+                            <span class="text-4xl mb-4">👆</span>
+                            <p>Select a module from the left to view details.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Orchestration Deep Dive (Step Functions) -->
+        <section class="bg-slate-900 text-white rounded-2xl p-8 shadow-xl overflow-hidden relative">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+                <span class="text-9xl font-bold">AWS</span>
+            </div>
+            
+            <div class="mb-8 relative z-10">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-amber-500 text-white px-2 py-1 rounded text-xs font-bold uppercase">Hybrid Orchestration</span>
+                    <h2 class="text-2xl font-bold">Strategy: Remote Triggers via Step Functions</h2>
+                </div>
+                <p class="text-slate-300 max-w-3xl">
+                    AWS Step Functions will act as the "Conductor," sending remote commands to the On-Prem servers (via API Gateway/VPN) to trigger local scripts, and then coordinating the Cloud-Native processing.
+                </p>
+            </div>
+
+            <!-- Orchestration Visualizer -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
+                <!-- Flow Diagram (Vertical) -->
+                <div class="lg:col-span-1 space-y-0">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Hybrid Workflow</h3>
+                    
+                    <div id="flowSteps" class="space-y-2 relative">
+                        <!-- Vertical Connector Line -->
+                        <div class="absolute left-6 top-4 bottom-4 w-0.5 bg-slate-700 -z-10"></div>
+                        <!-- Steps injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Step Detail Panel -->
+                <div class="lg:col-span-2 bg-slate-800 rounded-xl border border-slate-700 p-6 flex flex-col justify-center min-h-[400px]">
+                    <div id="stepDetail" class="animate-fade-in">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-3xl">⚡</span>
+                            <h3 class="text-xl font-bold text-white">EventBridge Trigger</h3>
+                        </div>
+                        <p class="text-slate-300 mb-6 leading-relaxed">
+                            The workflow is initiated by a scheduled event (e.g., every 4 hours) rather than a continuously running service. This is the entry point for the pipeline.
+                        </p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-slate-900/50 p-4 rounded border border-slate-700">
+                                <span class="text-xs text-blue-400 font-bold uppercase">Input</span>
+                                <p class="text-sm text-slate-300 mt-1">Scheduled Event Payload</p>
+                            </div>
+                            <div class="bg-slate-900/50 p-4 rounded border border-slate-700">
+                                <span class="text-xs text-green-400 font-bold uppercase">Benefit</span>
+                                <p class="text-sm text-slate-300 mt-1">Zero idle cost. Pay per execution.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Risks & Prerequisites Matrix -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Architect Recommendations -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-xl">🛡️</span>
+                    <h2 class="text-lg font-bold text-slate-900">Architect's Critical Risks</h2>
+                </div>
+                <div class="space-y-4">
+                    <div class="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+                        <h3 class="text-sm font-bold text-amber-800">Hybrid Connectivity</h3>
+                        <p class="text-xs text-amber-700 mt-1">
+                            Reliability depends entirely on the VPN/Direct Connect link. 
+                            <strong>Resolution:</strong> Implement redundant connections and strict timeout policies in Step Functions.
+                        </p>
+                    </div>
+                    <div class="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
+                        <h3 class="text-sm font-bold text-blue-800">API Security</h3>
+                        <p class="text-xs text-blue-700 mt-1">
+                            Exposing On-Prem scripts as APIs requires strict auth.
+                            <strong>Resolution:</strong> Use Mutual TLS (mTLS) or API Keys via Secrets Manager.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Infrastructure Prerequisites -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-xl">🏗️</span>
+                    <h2 class="text-lg font-bold text-slate-900">Infrastructure Prerequisites</h2>
+                </div>
+                <ul class="space-y-3">
+                    <li class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors">
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 flex-shrink-0 mt-0.5"></div>
+                        <div>
+                            <span class="text-sm font-bold text-slate-800 block">FastAPI Wrappers (On-Prem)</span>
+                            <span class="text-xs text-slate-500">Deploy Python APIs to trigger legacy scripts safely.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors">
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 flex-shrink-0 mt-0.5"></div>
+                        <div>
+                            <span class="text-sm font-bold text-slate-800 block">VPN / Direct Connect</span>
+                            <span class="text-xs text-slate-500">Ensure low-latency connection between AWS VPC and On-Prem Data Center.</span>
+                        </div>
+                    </li>
+                    <li class="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors">
+                        <div class="w-5 h-5 rounded-full border-2 border-slate-300 flex-shrink-0 mt-0.5"></div>
+                        <div>
+                            <span class="text-sm font-bold text-slate-800 block">Secrets Manager</span>
+                            <span class="text-xs text-slate-500">Store On-Prem API keys securely in AWS.</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-sm">Policy Watch Migration Strategy &copy; 2023</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- DATA STORE ---
+        
+        const modules = [
+            {
+                id: 'loader',
+                name: '1. Policy Loader',
+                role: 'Producer (Scraper)',
+                asIs: {
+                    loc: 'On-Prem Server',
+                    sched: 'Cron (Every 4 Hours)',
+                    risk: 'IP Reputation (Safe On-Prem)',
+                    input: 'Payer Portals',
+                    output: 'S3 (PDF), Postgres'
+                },
+                toBe: {
+                    strategy: 'Hybrid API Wrapper (Option B)',
+                    action: 'Wrap existing Python script in <strong>FastAPI</strong>',
+                    enhancement: 'Trigger remotely via AWS Step Functions',
+                    crit: '<strong>Connectivity:</strong> Depends on VPN stability.'
+                }
+            },
+            {
+                id: 'extractor',
+                name: '2. Policy Extractor',
+                role: 'Consumer (Parser)',
+                asIs: {
+                    loc: 'AWS ECS Service',
+                    sched: '24/7 Idle Service (Runs every 2h)',
+                    risk: 'Cost Inefficiency',
+                    input: 'S3 (PDF)',
+                    output: 'S3 (JSON), Postgres'
+                },
+                toBe: {
+                    strategy: 'Lift & Shift + Optimize',
+                    action: 'Convert to Scheduled ECS Task via EventBridge',
+                    enhancement: 'Add <code>DocumentParser</code> for HTML support',
+                    crit: '<strong>Dead Letter Queue (DLQ):</strong> For failure handling.'
+                }
+            },
+            {
+                id: 'analyzer',
+                name: '3. Policy Analyzer',
+                role: 'Consumer (Logic)',
+                asIs: {
+                    loc: 'AWS ECS Service',
+                    sched: 'Cron (Every 2 Hours)',
+                    risk: 'Race Conditions (Stale Data)',
+                    input: 'Extractor JSON',
+                    output: 'Impact JSON'
+                },
+                toBe: {
+                    strategy: 'Port & Orchestrate',
+                    action: 'Port to <code>packages/tools/policy_analyzer.py</code>',
+                    enhancement: 'Trigger via Step Functions only after Rules Update',
+                    crit: 'Validate Top-N matching logic.'
+                }
+            },
+            {
+                id: 'rulesLoader',
+                name: '4. Rules Loader',
+                role: 'Producer (Legacy)',
+                asIs: {
+                    loc: 'On-Prem Server',
+                    sched: 'Manual Trigger',
+                    risk: 'Legacy Debt (Perl/Oracle)',
+                    input: 'Oracle (Atlas DB)',
+                    output: 'S3 (Consolidated JSON)'
+                },
+                toBe: {
+                    strategy: 'Hybrid Wrapper (Option B)',
+                    action: 'Create Python Wrapper to trigger Perl Script',
+                    enhancement: 'Automate via AWS Step Functions -> On-Prem API',
+                    crit: '<strong>Legacy Stability:</strong> Perl script remains strictly On-Prem.'
+                }
+            },
+            {
+                id: 'rulesProcessor',
+                name: '5. Rules Processor',
+                role: 'Consumer (ML Engine)',
+                asIs: {
+                    loc: 'On-Prem Script',
+                    sched: 'Manual Trigger',
+                    risk: 'Manual Dependency',
+                    input: 'S3 (JSON)',
+                    output: 'Postgres (Embeddings)'
+                },
+                toBe: {
+                    strategy: 'Hybrid Orchestration',
+                    action: 'Trigger On-Prem Script via API/Agent',
+                    enhancement: 'Chained execution after Rules Loader',
+                    crit: 'Ensure strict ordering: Loader -> Processor -> Analyzer'
+                }
+            }
+        ];
+
+        const orchestrationSteps = [
+            {
+                title: "Cloud Trigger",
+                icon: "⏰",
+                detail: "EventBridge Schedule triggers the Step Function execution (e.g., Every 4 Hours) in AWS.",
+                input: "None",
+                output: "Start Execution"
+            },
+            {
+                title: "Remote Ingestion",
+                icon: "📡",
+                detail: "Step Function calls <strong>On-Prem APIs</strong> (via VPN). 1) Triggers Policy Loader Wrapper. 2) Triggers Rules Loader Wrapper.",
+                input: "Execution Start",
+                output: "Waiting for On-Prem..."
+            },
+            {
+                title: "Hybrid Wait",
+                icon: "⏳",
+                detail: "AWS Step Function pauses and polls/waits for the On-Prem jobs to report 'Success' via callback.",
+                input: "Pending Remote Jobs",
+                output: "Remote Success Signal"
+            },
+            {
+                title: "Remote Rules Proc",
+                icon: "🧠",
+                detail: "If RulesLoader succeeded, trigger 'RulesProcessor' (On-Prem). Wait for Embeddings update to Postgres.",
+                input: "Rules Success Signal",
+                output: "Fresh Embeddings in DB"
+            },
+            {
+                title: "Cloud Extraction",
+                icon: "📄",
+                detail: "<strong>Back to Cloud:</strong> Process new S3 PDF keys using 'PolicyExtractor' ECS Task.",
+                input: "S3 Keys List",
+                output: "Parsed JSONs"
+            },
+            {
+                title: "Cloud Analysis",
+                icon: "📊",
+                detail: "Run 'PolicyAnalyzer' ECS Task. Comparing S3 JSONs against the freshly updated Postgres Embeddings.",
+                input: "Parsed JSON + Embeddings",
+                output: "Impact Report"
+            }
+        ];
+
+        // --- CHART GENERATION ---
+
+        // Label Wrapping Helper
+        function wrapLabel(str, maxChars) {
+            if (str.length <= maxChars) return str;
+            const words = str.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+            for (let i = 1; i < words.length; i++) {
+                if (currentLine.length + 1 + words[i].length <= maxChars) {
+                    currentLine += ' ' + words[i];
+                } else {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        // Common Tooltip Config
+        const commonTooltipConfig = {
+            callbacks: {
+                title: function(tooltipItems) {
+                    const item = tooltipItems[0];
+                    let label = item.chart.data.labels[item.dataIndex];
+                    if (Array.isArray(label)) {
+                        return label.join(' ');
+                    } else {
+                        return label;
+                    }
+                }
+            }
+        };
+
+        function initCharts() {
+            // Chart 1: Infrastructure Shift (Doughnut)
+            const ctx1 = document.getElementById('infraChart').getContext('2d');
+            const labels1 = ['On-Premises (Hybrid)', 'Cloud Native (ECS)'];
+            const processedLabels1 = labels1.map(l => wrapLabel(l, 16));
+
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: processedLabels1,
+                    datasets: [{
+                        data: [40, 60], // Hybrid State
+                        backgroundColor: ['#f59e0b', '#3b82f6'], // Amber for On-Prem, Blue for Cloud
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+                        tooltip: commonTooltipConfig
+                    }
+                }
+            });
+
+            // Chart 2: Schedule Type (Bar)
+            const ctx2 = document.getElementById('scheduleChart').getContext('2d');
+            const labels2 = ['Manual/Cron', 'Event-Driven (Hybrid)'];
+            const processedLabels2 = labels2.map(l => wrapLabel(l, 16));
+
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: processedLabels2,
+                    datasets: [{
+                        label: 'Components',
+                        data: [0, 5], // All 5 are automated, just across hybrid envs
+                        backgroundColor: ['#cbd5e1', '#10b981'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false } } },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: commonTooltipConfig
+                    }
+                }
+            });
+        }
+
+        // --- COMPONENT NAVIGATOR LOGIC ---
+
+        function renderModuleSelector() {
+            const container = document.getElementById('moduleSelector');
+            container.innerHTML = modules.map((m, index) => `
+                <button onclick="selectModule(${index})" 
+                        id="btn-${index}"
+                        class="module-card w-full text-left p-4 rounded-xl border-2 border-slate-200 bg-white hover:border-amber-400 group transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm group-hover:text-amber-600 transition-colors">${m.name}</h3>
+                            <p class="text-xs text-slate-500 mt-1">${m.role}</p>
+                        </div>
+                        <span class="text-slate-300 group-hover:text-amber-500">→</span>
+                    </div>
+                </button>
+            `).join('');
+            
+            // Select first by default
+            selectModule(0);
+        }
+
+        function selectModule(index) {
+            const m = modules[index];
+            
+            // Update buttons styling
+            document.querySelectorAll('#moduleSelector button').forEach((btn, idx) => {
+                if(idx === index) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Render Detail View
+            const detailContainer = document.getElementById('detailView');
+            detailContainer.innerHTML = `
+                <!-- Header -->
+                <div class="bg-slate-50 border-b border-slate-200 p-6 flex justify-between items-start">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">${m.name}</h2>
+                        <span class="inline-block mt-2 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded uppercase tracking-wide">
+                            ${m.role}
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-500 uppercase tracking-wide font-bold">Location</p>
+                        <p class="text-sm font-medium text-slate-700">${m.asIs.loc}</p>
+                    </div>
+                </div>
+
+                <!-- Comparison Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 flex-grow">
+                    
+                    <!-- As-Is Column -->
+                    <div class="p-6 border-r border-slate-100 bg-white">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">As-Is State</h3>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <p class="text-xs text-slate-400 font-bold uppercase mb-1">Schedule</p>
+                                <p class="text-sm text-slate-700">${m.asIs.sched}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 font-bold uppercase mb-1">Input / Output</p>
+                                <div class="flex items-center gap-2 text-sm text-slate-600">
+                                    <span class="bg-slate-100 px-2 py-1 rounded">${m.asIs.input}</span>
+                                    <span>→</span>
+                                    <span class="bg-slate-100 px-2 py-1 rounded">${m.asIs.output}</span>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                                <p class="text-xs text-slate-500 font-bold uppercase mb-1">Previous Risk</p>
+                                <p class="text-sm text-slate-700 font-medium">${m.asIs.risk}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- To-Be Column -->
+                    <div class="p-6 bg-amber-50/30">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                            <h3 class="text-sm font-bold text-amber-600 uppercase tracking-wider">Hybrid Strategy</h3>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <p class="text-xs text-amber-500 font-bold uppercase mb-1">Strategy</p>
+                                <p class="text-sm text-slate-900 font-bold">${m.toBe.strategy}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-amber-500 font-bold uppercase mb-1">Key Action</p>
+                                <p class="text-sm text-slate-700">${m.toBe.action}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-amber-500 font-bold uppercase mb-1">Enhancement</p>
+                                <p class="text-sm text-slate-700 flex items-start gap-2">
+                                    <span class="text-green-500">✓</span> ${m.toBe.enhancement}
+                                </p>
+                            </div>
+                             <div class="p-4 bg-white border border-amber-200 rounded-lg shadow-sm">
+                                <p class="text-xs text-indigo-500 font-bold uppercase mb-1">Dependency</p>
+                                <p class="text-sm text-slate-700">${m.toBe.crit}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- ORCHESTRATION VISUALIZER LOGIC ---
+
+        function renderOrchestration() {
+            const container = document.getElementById('flowSteps');
+            container.innerHTML += orchestrationSteps.map((step, index) => `
+                <div onclick="selectStep(${index})" id="step-${index}" 
+                     class="step-node relative z-10 bg-slate-800 border border-slate-600 p-3 rounded-lg flex items-center gap-3 cursor-pointer hover:bg-slate-700 hover:border-amber-400 ml-4 mb-4 last:mb-0">
+                    <div class="w-8 h-8 rounded bg-slate-700 flex items-center justify-center text-lg shadow-inner">
+                        ${step.icon}
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">${step.title}</h4>
+                        <span class="text-[10px] text-slate-400">Step ${index + 1}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            selectStep(0);
+        }
+
+        function selectStep(index) {
+            const step = orchestrationSteps[index];
+
+            // Update UI Styling
+            document.querySelectorAll('.step-node').forEach((node, idx) => {
+                if (idx === index) {
+                    node.classList.add('active-step', 'bg-slate-700', 'border-amber-500');
+                    node.classList.remove('bg-slate-800', 'border-slate-600');
+                    // Change text colors for active state
+                    node.querySelector('h4').classList.add('text-amber-300');
+                    node.querySelector('h4').classList.remove('text-white');
+                } else {
+                    node.classList.remove('active-step', 'bg-slate-700', 'border-amber-500');
+                    node.classList.add('bg-slate-800', 'border-slate-600');
+                    node.querySelector('h4').classList.remove('text-amber-300');
+                    node.querySelector('h4').classList.add('text-white');
+                }
+            });
+
+            // Update Detail View
+            const detailContainer = document.getElementById('stepDetail');
+            
+            // Fade out, update, fade in
+            detailContainer.classList.remove('animate-fade-in');
+            void detailContainer.offsetWidth; // Trigger reflow
+            detailContainer.classList.add('animate-fade-in');
+
+            detailContainer.innerHTML = `
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="text-4xl filter drop-shadow-lg">${step.icon}</span>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">${step.title}</h3>
+                        <span class="text-xs text-amber-400 font-mono uppercase">State ${index + 1}</span>
+                    </div>
+                </div>
+                <p class="text-slate-300 mb-8 text-lg leading-relaxed border-l-4 border-amber-500 pl-4">
+                    ${step.detail}
+                </p>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-slate-900/50 p-5 rounded-lg border border-slate-700">
+                        <span class="text-xs text-slate-500 font-bold uppercase tracking-wider block mb-2">Input Context</span>
+                        <p class="text-sm text-white font-mono bg-slate-800 p-2 rounded">${step.input}</p>
+                    </div>
+                    <div class="bg-slate-900/50 p-5 rounded-lg border border-slate-700">
+                        <span class="text-xs text-green-500 font-bold uppercase tracking-wider block mb-2">Output / Action</span>
+                        <p class="text-sm text-white font-mono bg-slate-800 p-2 rounded">${step.output}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            renderModuleSelector();
+            renderOrchestration();
+        });
+
+    </script>
+</body>
+</html>
