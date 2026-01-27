@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Crash Course | Policy Watch Migration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #334155; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Syntax Highlighting Mock */
+        .code-block { background-color: #1e293b; color: #e2e8f0; font-family: 'Fira Code', monospace; padding: 1.5rem; border-radius: 0.5rem; overflow-x: auto; font-size: 0.875rem; line-height: 1.5; }
+        .keyword { color: #c678dd; } /* Purple */
+        .string { color: #98c379; } /* Green */
+        .function { color: #61afef; } /* Blue */
+        .comment { color: #5c6370; font-style: italic; } /* Grey */
+
+        /* Animation */
+        .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; transform: translateY(20px); }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+        
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+
+        /* Analogy Card Flip (Simplified as Reveal) */
+        .analogy-card { transition: all 0.3s ease; }
+        .analogy-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="bg-orange-500 p-2 rounded-lg font-bold text-white">AWS</div>
+                <div>
+                    <h1 class="text-xl font-bold leading-none">Developer Crash Course</h1>
+                    <p class="text-xs text-slate-400 mt-1">For Policy Watch Migration</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex gap-6 text-sm font-medium text-slate-300">
+                <a href="#eventbridge" class="hover:text-white transition-colors">EventBridge</a>
+                <a href="#fargate" class="hover:text-white transition-colors">Fargate</a>
+                <a href="#boto3" class="hover:text-white transition-colors">Boto3</a>
+                <a href="#compute" class="hover:text-white transition-colors">Compute Types</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto px-6 py-12 w-full space-y-24">
+
+        <!-- Intro -->
+        <section class="text-center space-y-6 fade-in-up">
+            <h2 class="text-4xl font-extrabold text-slate-900">From On-Prem to Cloud Native</h2>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                You are migrating Python scripts from a static on-prem server to a dynamic AWS environment. 
+                This guide translates the core AWS concepts you'll use daily during the migration.
+            </p>
+        </section>
+
+        <!-- 1. EventBridge Scheduler -->
+        <section id="eventbridge" class="scroll-mt-24 fade-in-up delay-100">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-pink-100 text-pink-600 p-3 rounded-xl text-2xl">⏰</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-900">Amazon EventBridge Scheduler</h3>
+                    <p class="text-slate-500 font-mono text-sm">The "Cloud Cron"</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <!-- Analogy -->
+                <div class="analogy-card bg-white border border-slate-200 rounded-xl p-6 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded-bl">ANALOGY</div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-3">The Hotel Wake-Up Call</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        Imagine you need to wake up at 7 AM.
+                        <br><br>
+                        <strong>Old Way (Cron):</strong> You buy an alarm clock and keep it by your bed. You have to maintain it (batteries) and it sits there doing nothing 99% of the time.
+                        <br><br>
+                        <strong>AWS Way (EventBridge):</strong> You tell the hotel front desk "Wake me at 7." You don't own the phone or the clock. The desk calls you exactly when needed.
+                    </p>
+                </div>
+
+                <!-- Policy Watch Context -->
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-6">
+                    <h4 class="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3">In Policy Watch</h4>
+                    <p class="text-slate-700 text-sm mb-4">
+                        We are replacing the <strong>On-Prem Cron Job</strong> (running every 4 hours) with an <strong>EventBridge Schedule</strong>.
+                    </p>
+                    <ul class="space-y-2 text-sm text-blue-800">
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500">✓</span>
+                            <span>Triggers the <strong>Policy Loader</strong> ECS Task.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500">✓</span>
+                            <span>Triggers the <strong>Policy Extractor</strong>.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500">✓</span>
+                            <span>Zero cost when not running (no idle server).</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Code Snippet -->
+            <div class="bg-slate-900 rounded-xl overflow-hidden shadow-lg">
+                <div class="bg-slate-800 px-4 py-2 text-xs text-slate-400 font-mono border-b border-slate-700 flex justify-between">
+                    <span>Terraform / CDK Definition (Conceptual)</span>
+                    <span>infrastructure.tf</span>
+                </div>
+                <div class="code-block">
+<span class="keyword">resource</span> <span class="string">"aws_scheduler_schedule"</span> <span class="string">"policy_loader_trigger"</span> {
+  name       = <span class="string">"trigger-policy-loader-every-4h"</span>
+  <span class="comment"># Standard Cron Syntax</span>
+  schedule   = <span class="string">"cron(0 */4 * * ? *)"</span>
+
+  <span class="keyword">target</span> {
+    arn      = aws_ecs_cluster.main.arn
+    role_arn = aws_iam_role.scheduler.arn
+    
+    <span class="comment"># What to do when the alarm rings? Run this container.</span>
+    ecs_parameters {
+      task_definition_arn = aws_ecs_task_definition.loader.arn
+      launch_type         = <span class="string">"FARGATE"</span>
+    }
+  }
+}
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-slate-200">
+
+        <!-- 2. AWS Fargate (ECS) -->
+        <section id="fargate" class="scroll-mt-24 fade-in-up delay-200">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-orange-100 text-orange-600 p-3 rounded-xl text-2xl">🐳</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-900">AWS Fargate (ECS)</h3>
+                    <p class="text-slate-500 font-mono text-sm">Serverless Containers</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div class="analogy-card bg-white border border-slate-200 rounded-xl p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded-bl">ANALOGY</div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-3">The Rental Car</h4>
+                    <p class="text-slate-600 leading-relaxed">
+                        <strong>Old Way (EC2/On-Prem):</strong> Buying a car. You pay for it even when it's parked in the garage (idle). You have to change the oil (OS patches).
+                        <br><br>
+                        <strong>AWS Way (Fargate):</strong> A Zipcar/Uber. You request a car (CPU/Memory), drive it to your destination (run your script), and get out. You pay <em>only</em> for the minutes you drove. You never change the oil.
+                    </p>
+                </div>
+
+                <div class="bg-orange-50 border border-orange-100 rounded-xl p-6">
+                    <h4 class="text-sm font-bold text-orange-900 uppercase tracking-wide mb-3">In Policy Watch</h4>
+                    <p class="text-slate-700 text-sm mb-4">
+                        All our Python scripts (`policy_retriever.py`, `policy_extractor.py`) will run as <strong>Fargate Tasks</strong>.
+                    </p>
+                    <ul class="space-y-2 text-sm text-orange-800">
+                        <li class="flex items-start gap-2">
+                            <span class="text-orange-500">✓</span>
+                            <span><strong>Task Definition:</strong> The recipe (Docker image, CPU size).</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-orange-500">✓</span>
+                            <span><strong>Task:</strong> The actual running instance.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-orange-500">✓</span>
+                            <span>It spins up, runs the script, and dies. No server to manage.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-slate-200">
+
+        <!-- 3. Boto3 & S3 -->
+        <section id="boto3" class="scroll-mt-24 fade-in-up delay-300">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-green-100 text-green-600 p-3 rounded-xl text-2xl">📦</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-900">Boto3 & S3</h3>
+                    <p class="text-slate-500 font-mono text-sm">The "Cloud File System"</p>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <p class="text-slate-600 mb-4">
+                    <strong>Boto3</strong> is the AWS SDK for Python. It's how your script talks to AWS services like S3 (Storage).
+                    In the old app, you saved files to a local disk or sent them to an API. Now, you save directly to S3.
+                </p>
+            </div>
+
+            <!-- Interactive Comparison -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Old Way -->
+                <div class="bg-red-50 border border-red-100 rounded-xl p-4">
+                    <h4 class="text-xs font-bold text-red-800 uppercase mb-2">Old Python (File Write)</h4>
+                    <div class="code-block bg-slate-900 text-xs">
+<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'/tmp/policy.pdf'</span>, <span class="string">'wb'</span>) <span class="keyword">as</span> f:
+    f.write(pdf_content)
+
+<span class="comment"># Then call an API to upload it...</span>
+requests.post(<span class="string">'http://rule-service/upload'</span>...)
+                    </div>
+                </div>
+
+                <!-- New Way -->
+                <div class="bg-green-50 border border-green-100 rounded-xl p-4">
+                    <h4 class="text-xs font-bold text-green-800 uppercase mb-2">New Python (Boto3 Direct)</h4>
+                    <div class="code-block bg-slate-900 text-xs">
+<span class="keyword">import</span> boto3
+
+s3 = boto3.client(<span class="string">'s3'</span>)
+
+<span class="comment"># Upload directly from memory to Cloud</span>
+s3.put_object(
+    Bucket=<span class="string">'policy-watch-bucket'</span>,
+    Key=<span class="string">'policies/2023/policy_123.pdf'</span>,
+    Body=pdf_content
+)
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-slate-200">
+
+        <!-- 4. Secrets Manager -->
+        <section id="secrets" class="scroll-mt-24 fade-in-up delay-300">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-purple-100 text-purple-600 p-3 rounded-xl text-2xl">🔐</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-900">AWS Secrets Manager</h3>
+                    <p class="text-slate-500 font-mono text-sm">The "Digital Safe"</p>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mb-6">
+                <h4 class="font-bold text-slate-800 mb-2">Why do we need this?</h4>
+                <p class="text-slate-600 text-sm">
+                    In the migration, we are adding a <strong>Proxy Service</strong> (to scrape without getting blocked) and using <strong>OpenAI</strong>. 
+                    These require API Keys. 
+                    <br><br>
+                    <span class="text-red-500 font-bold">NEVER</span> hardcode keys in your Python script or Git repo.
+                    Instead, your script asks the "Safe" (Secrets Manager) for the key at runtime.
+                </p>
+            </div>
+
+            <div class="code-block text-sm">
+<span class="keyword">import</span> boto3
+<span class="keyword">import</span> json
+
+<span class="keyword">def</span> <span class="function">get_openai_key</span>():
+    client = boto3.client(<span class="string">'secretsmanager'</span>)
+    
+    <span class="comment"># Fetch the secret value by name</span>
+    response = client.get_secret_value(SecretId=<span class="string">'COLAJ_SECRETS'</span>)
+    
+    <span class="comment"># Parse the JSON string inside</span>
+    secrets = json.loads(response[<span class="string">'SecretString'</span>])
+    
+    <span class="keyword">return</span> secrets[<span class="string">'OPENAI_API_KEY'</span>]
+            </div>
+        </section>
+
+        <!-- 5. Proxy Rotation (Concept) -->
+        <section id="proxy" class="scroll-mt-24 fade-in-up delay-300">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-indigo-100 text-indigo-600 p-3 rounded-xl text-2xl">🎭</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-900">Proxy Rotation</h3>
+                    <p class="text-slate-500 font-mono text-sm">The "Digital Disguise"</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <p class="text-slate-700 leading-relaxed mb-4">
+                        When we move the scraper to AWS, it will have an AWS IP address. Payer portals (like UHC, Anthem) often block AWS IPs automatically because they assume it's a bot.
+                    </p>
+                    <p class="text-slate-700 leading-relaxed">
+                        To fix this, we route our requests through a <strong>Proxy Service</strong> (like BrightData). This makes our request look like it's coming from a residential home internet connection, bypassing the block.
+                    </p>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-6">
+                    <h4 class="text-xs font-bold text-indigo-900 uppercase tracking-wide mb-2">Python Implementation</h4>
+                    <div class="code-block bg-slate-900 text-xs">
+proxies = {
+    <span class="string">'http'</span>: <span class="string">'http://user:pass@brightdata.com:port'</span>,
+    <span class="string">'https'</span>: <span class="string">'http://user:pass@brightdata.com:port'</span>
+}
+
+<span class="comment"># The request goes AWS -> Proxy -> Payer Portal</span>
+response = requests.get(
+    <span class="string">'https://payer-portal.com/policy.pdf'</span>, 
+    proxies=proxies
+)
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="border-slate-200">
+
+        <!-- 6. Other Compute Services (Comparison) -->
+        <section id="compute" class="scroll-mt-24 fade-in-up delay-300 pb-20">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="bg-teal-100 text-teal-600 p-3 rounded-xl text-2xl">⚡</div>
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-900">AWS Compute Landscape</h3>
+                    <p class="text-slate-500 font-mono text-sm">ECS vs EKS vs Lambda</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- ECS -->
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="text-xs font-bold text-blue-600 uppercase tracking-wide mb-2">ECS (Elastic Container Service)</div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-2">The "Home Cooked Meal"</h4>
+                    <p class="text-slate-600 text-sm mb-4">
+                        Simple, native Docker orchestration. You define tasks, AWS runs them.
+                    </p>
+                    <div class="bg-blue-50 p-3 rounded text-xs text-blue-900">
+                        <strong>Policy Watch:</strong> <span class="font-bold">YES.</span> We use ECS Fargate because our tasks (Scraper, Parser) are long-running batches that need consistent CPU/Memory.
+                    </div>
+                </div>
+
+                <!-- EKS -->
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="text-xs font-bold text-purple-600 uppercase tracking-wide mb-2">EKS (Kubernetes)</div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-2">The "Catered Banquet"</h4>
+                    <p class="text-slate-600 text-sm mb-4">
+                        Complex, powerful, industry-standard orchestration. Great for microservices at scale.
+                    </p>
+                    <div class="bg-slate-100 p-3 rounded text-xs text-slate-500">
+                        <strong>Policy Watch:</strong> <span class="font-bold">NO.</span> Too much overhead for 5 simple batch scripts. We don't need the complexity of K8s here.
+                    </div>
+                </div>
+
+                <!-- Lambda -->
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="text-xs font-bold text-orange-600 uppercase tracking-wide mb-2">AWS Lambda</div>
+                    <h4 class="text-lg font-bold text-slate-800 mb-2">The "Pizza Slice"</h4>
+                    <p class="text-slate-600 text-sm mb-4">
+                        Functions as a Service. You pay per millisecond. Great for quick event handling.
+                    </p>
+                    <div class="bg-slate-100 p-3 rounded text-xs text-slate-500">
+                        <strong>Policy Watch:</strong> <span class="font-bold">MAYBE LATER.</span> Our Scraper/Parser might run for >15 mins (Lambda limit) processing large PDFs, so ECS is safer.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 text-center">
+        <p class="text-sm">Ready to migrate? Check the <strong>Estimation Sheet</strong> for your task assignments.</p>
+    </footer>
+
+</body>
+</html>

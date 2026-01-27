@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Watch | Migration Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: #f8fafc; color: #1e293b; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Animation Utilities */
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .slide-in { animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Chart Containers */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+        }
+
+        /* Interactive Elements */
+        .module-btn { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .module-btn:hover { background-color: #f1f5f9; }
+        .module-btn.active { background-color: #eff6ff; border-left-color: #3b82f6; color: #1d4ed8; }
+
+        .task-row:nth-child(even) { background-color: #f8fafc; }
+        
+        /* Status Badges */
+        .badge-critical { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .badge-rec { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .badge-warn { background-color: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        
+        /* Step Function Node Styling */
+        .step-node {
+            position: relative;
+            z-index: 10;
+        }
+        .step-node::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -20px;
+            width: 2px;
+            height: 20px;
+            background-color: #cbd5e1;
+            z-index: -1;
+            transform: translateX(-50%);
+        }
+        .step-node:last-child::after { display: none; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg font-bold shadow-sm">PW</div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 leading-tight">Policy Watch</h1>
+                    <p class="text-xs text-slate-500 font-medium">Migration Command Center</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-6 text-sm">
+                <div class="hidden md:block text-slate-500">
+                    <span class="font-bold text-slate-700">Timeline:</span> 10 Days
+                </div>
+                <div class="hidden md:block text-slate-500">
+                    <span class="font-bold text-slate-700">Effort:</span> ~54 SP
+                </div>
+                <button onclick="document.getElementById('risks').scrollIntoView({behavior: 'smooth'})" class="text-red-600 font-bold hover:text-red-700 text-xs uppercase tracking-wide border border-red-200 bg-red-50 px-3 py-1.5 rounded-full transition-colors">
+                    View Critical Risks
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full p-6 space-y-12">
+
+        <!-- 1. Executive Summary & Metrics -->
+        <section class="animate-fade-in">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Migration Overview</h2>
+                    <p class="text-slate-600 mt-1 max-w-2xl">
+                        A strategic initiative to transition Policy Watch from a hybrid legacy architecture to a fully <strong>Cloud-Native, Monorepo</strong> system using ECS Fargate and Event-Driven Orchestration.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Effort Distribution -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Effort Distribution (Story Points)</h3>
+                    <div class="chart-container">
+                        <canvas id="spChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Velocity Target -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Velocity Challenge</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <span class="text-3xl font-bold text-slate-900">5.4</span>
+                            <span class="text-sm text-slate-500">SP / Day</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="block text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">AGGRESSIVE</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">
+                        Target velocity requires strict adherence to the plan. Any delay in <strong>RL-A-01</strong> (Perl Analysis) triggers a fallback to Option B.
+                    </p>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5">
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 85%"></div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2 text-right">Capacity Utilization: 85%+</p>
+                </div>
+
+                <!-- Key Architecture Shifts -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Strategic Shifts</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">1</div>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">Legacy to Monorepo</h4>
+                                <p class="text-xs text-slate-500">Consolidating 5 modules into `packages/tools`.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded bg-green-50 text-green-600 flex items-center justify-center font-bold text-sm">2</div>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">Cron to Event-Driven</h4>
+                                <p class="text-xs text-slate-500">Replacing independent schedules with Step Functions.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-sm">3</div>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">Perl to Python</h4>
+                                <p class="text-xs text-slate-500">Modernizing critical Rules Loader logic.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Module Command Center -->
+        <section id="modules" class="scroll-mt-20">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Module Command Center</h2>
+                <p class="text-slate-600">Deep dive into tasks, prerequisites, and strategy for each component.</p>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row min-h-[600px]">
+                <!-- Sidebar -->
+                <div class="w-full lg:w-1/4 border-b lg:border-b-0 lg:border-r border-slate-200 bg-slate-50">
+                    <div class="p-4 border-b border-slate-200">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Component</h3>
+                    </div>
+                    <div id="moduleList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Detail View -->
+                <div class="w-full lg:w-3/4 p-6 lg:p-8 flex flex-col">
+                    <div id="moduleDetail" class="slide-in h-full flex flex-col">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Strategic Timeline (10 Days) -->
+        <section>
+            <div class="mb-6 flex justify-between items-end">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Execution Timeline</h2>
+                    <p class="text-slate-600">10-Day aggressive sprint schedule for 2 Developers.</p>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto pb-4">
+                <div class="min-w-[1000px] grid grid-cols-10 gap-2 text-center">
+                    <!-- Days Header -->
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 1</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 2</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 3</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 4</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 5</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 6</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 7</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 8</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 9</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Day 10</div>
+
+                    <!-- Dev 1 Row -->
+                    <div class="bg-blue-100 p-2 rounded text-[10px] font-bold text-blue-800 border border-blue-200">Scraper Port<br>(PL-A-01/02)</div>
+                    <div class="bg-blue-100 p-2 rounded text-[10px] font-bold text-blue-800 border border-blue-200">Scraper Port<br>(Finish)</div>
+                    <div class="bg-blue-50 p-2 rounded text-[10px] font-bold text-blue-700 border border-blue-200">Proxy Integ<br>(PL-A-03)</div>
+                    <div class="bg-blue-50 p-2 rounded text-[10px] font-bold text-blue-700 border border-blue-200">HTML Scraping<br>(PL-A-04)</div>
+                    <div class="bg-blue-50 p-2 rounded text-[10px] font-bold text-blue-700 border border-blue-200">Loader Infra<br>(PL-A-05)</div>
+                    <div class="bg-purple-100 p-2 rounded text-[10px] font-bold text-purple-800 border border-purple-200">Analyzer Port<br>(PA-01)</div>
+                    <div class="bg-purple-100 p-2 rounded text-[10px] font-bold text-purple-800 border border-purple-200">Step Funcs<br>(PA-02)</div>
+                    <div class="bg-indigo-100 p-2 rounded text-[10px] font-bold text-indigo-800 border border-indigo-200">Testing &<br>Processor</div>
+                    <div class="bg-slate-200 p-2 rounded text-[10px] font-bold text-slate-800 border border-slate-300">Events &<br>Integration</div>
+                    <div class="bg-slate-800 p-2 rounded text-[10px] font-bold text-white border border-slate-700">Handover</div>
+
+                    <!-- Dev 2 Row -->
+                    <div class="bg-green-100 p-2 rounded text-[10px] font-bold text-green-800 border border-green-200">Extractor<br>(PE-01)</div>
+                    <div class="bg-green-100 p-2 rounded text-[10px] font-bold text-green-800 border border-green-200">SQS / DLQ<br>(PE-03)</div>
+                    <div class="bg-green-50 p-2 rounded text-[10px] font-bold text-green-700 border border-green-200">LLM Client<br>(PE-04)</div>
+                    <div class="bg-red-100 p-2 rounded text-[10px] font-bold text-red-800 border border-red-200 relative">Perl Analysis<br>(RL-A-01)<div class="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-white" title="Decision Point"></div></div>
+                    <div class="bg-amber-100 p-2 rounded text-[10px] font-bold text-amber-800 border border-amber-200">Atlas Client<br>(RL-A-02)</div>
+                    <div class="bg-amber-100 p-2 rounded text-[10px] font-bold text-amber-800 border border-amber-200">Rules Logic<br>(RL-A-03)</div>
+                    <div class="bg-amber-100 p-2 rounded text-[10px] font-bold text-amber-800 border border-amber-200">Rules Logic<br>(Cont.)</div>
+                    <div class="bg-amber-50 p-2 rounded text-[10px] font-bold text-amber-700 border border-amber-200">Shadow Mode<br>(RL-A-04)</div>
+                    <div class="bg-slate-200 p-2 rounded text-[10px] font-bold text-slate-800 border border-slate-300">Integration<br>Test</div>
+                    <div class="bg-slate-800 p-2 rounded text-[10px] font-bold text-white border border-slate-700">Handover</div>
+                </div>
+            </div>
+            <div class="flex gap-4 mt-2 justify-center">
+                <div class="flex items-center gap-1 text-xs text-slate-500"><span class="w-3 h-3 bg-blue-100 rounded"></span>Loader</div>
+                <div class="flex items-center gap-1 text-xs text-slate-500"><span class="w-3 h-3 bg-green-100 rounded"></span>Extractor</div>
+                <div class="flex items-center gap-1 text-xs text-slate-500"><span class="w-3 h-3 bg-purple-100 rounded"></span>Analyzer</div>
+                <div class="flex items-center gap-1 text-xs text-slate-500"><span class="w-3 h-3 bg-amber-100 rounded"></span>Rules</div>
+                <div class="flex items-center gap-1 text-xs text-slate-500"><span class="w-3 h-3 bg-slate-200 rounded"></span>Testing</div>
+            </div>
+        </section>
+
+        <!-- 4. Orchestration Flow -->
+        <section class="bg-slate-900 text-white p-8 rounded-2xl shadow-xl overflow-hidden relative">
+            <div class="absolute top-0 right-0 p-8 opacity-5 font-bold text-9xl select-none">AWS</div>
+            
+            <div class="mb-8 relative z-10">
+                <h2 class="text-2xl font-bold">Orchestration Flow</h2>
+                <p class="text-slate-400">AWS Step Functions State Machine Design</p>
+            </div>
+
+            <div class="flex flex-col md:flex-row justify-center items-center gap-4 relative z-10">
+                <!-- Trigger -->
+                <div class="step-node bg-slate-800 border border-slate-600 p-4 rounded-lg w-full md:w-48 text-center shadow-lg">
+                    <div class="text-2xl mb-2">⏰</div>
+                    <h3 class="font-bold text-sm">EventBridge</h3>
+                    <p class="text-[10px] text-slate-400">Scheduled Trigger</p>
+                </div>
+
+                <!-- Parallel State -->
+                <div class="step-node bg-slate-800 border border-blue-500 p-4 rounded-lg w-full md:w-64 text-center shadow-lg ring-2 ring-blue-500/20">
+                    <div class="text-2xl mb-2">🔀</div>
+                    <h3 class="font-bold text-sm text-blue-300">Parallel Ingestion</h3>
+                    <div class="flex justify-around mt-2 pt-2 border-t border-slate-700">
+                        <div class="text-[10px]">Loader Task</div>
+                        <div class="text-[10px]">Rules Task</div>
+                    </div>
+                </div>
+
+                <!-- Wait State -->
+                <div class="step-node bg-slate-800 border border-slate-600 p-4 rounded-lg w-full md:w-48 text-center shadow-lg">
+                    <div class="text-2xl mb-2">⏳</div>
+                    <h3 class="font-bold text-sm">Wait / Join</h3>
+                    <p class="text-[10px] text-slate-400">Sync Dependencies</p>
+                </div>
+
+                <!-- Processor -->
+                <div class="step-node bg-slate-800 border border-amber-500 p-4 rounded-lg w-full md:w-48 text-center shadow-lg">
+                    <div class="text-2xl mb-2">🧠</div>
+                    <h3 class="font-bold text-sm text-amber-300">ML Processor</h3>
+                    <p class="text-[10px] text-slate-400">Update Embeddings</p>
+                </div>
+
+                <!-- Analyzer -->
+                <div class="step-node bg-slate-800 border border-purple-500 p-4 rounded-lg w-full md:w-48 text-center shadow-lg">
+                    <div class="text-2xl mb-2">📊</div>
+                    <h3 class="font-bold text-sm text-purple-300">Analyzer</h3>
+                    <p class="text-[10px] text-slate-400">Golden Logic</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Risk Matrix -->
+        <section id="risks" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-red-50 rounded-xl p-6 border border-red-100">
+                <h3 class="text-lg font-bold text-red-800 mb-4 flex items-center gap-2">
+                    <span class="text-xl">⚠️</span> Critical Architect Risks
+                </h3>
+                <ul class="space-y-4">
+                    <li class="bg-white p-4 rounded-lg border border-red-100 shadow-sm">
+                        <span class="block text-xs font-bold text-red-500 uppercase tracking-wide mb-1">IP Reputation</span>
+                        <p class="text-sm text-slate-700">Moving scrapers to AWS Public IPs invites immediate blocking by Payer Portals.</p>
+                        <div class="mt-2 text-xs font-bold text-green-700 bg-green-50 inline-block px-2 py-1 rounded">Resolution: Proxy Rotation Service</div>
+                    </li>
+                    <li class="bg-white p-4 rounded-lg border border-red-100 shadow-sm">
+                        <span class="block text-xs font-bold text-red-500 uppercase tracking-wide mb-1">Legacy DB Access</span>
+                        <p class="text-sm text-slate-700">Connecting ECS to On-Prem Oracle (Atlas DB) requires complex networking.</p>
+                        <div class="mt-2 text-xs font-bold text-green-700 bg-green-50 inline-block px-2 py-1 rounded">Resolution: Site-to-Site VPN / Direct Connect</div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="bg-blue-50 rounded-xl p-6 border border-blue-100">
+                <h3 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
+                    <span class="text-xl">🏗️</span> Infrastructure Prerequisites
+                </h3>
+                <ul class="space-y-3">
+                    <li class="flex gap-3 items-start">
+                        <div class="mt-1 w-4 h-4 rounded-full border-2 border-blue-400 flex-shrink-0"></div>
+                        <span class="text-sm text-slate-700"><strong>AWS Secrets Manager:</strong> Provisioned for DB Creds & API Keys.</span>
+                    </li>
+                    <li class="flex gap-3 items-start">
+                        <div class="mt-1 w-4 h-4 rounded-full border-2 border-blue-400 flex-shrink-0"></div>
+                        <span class="text-sm text-slate-700"><strong>IAM Roles:</strong> Permissions for ECS Tasks to access S3 & Secrets.</span>
+                    </li>
+                    <li class="flex gap-3 items-start">
+                        <div class="mt-1 w-4 h-4 rounded-full border-2 border-blue-400 flex-shrink-0"></div>
+                        <span class="text-sm text-slate-700"><strong>SQS Queues:</strong> Created for Extractor DLQ handling.</span>
+                    </li>
+                    <li class="flex gap-3 items-start">
+                        <div class="mt-1 w-4 h-4 rounded-full border-2 border-blue-400 flex-shrink-0"></div>
+                        <span class="text-sm text-slate-700"><strong>Oracle Access:</strong> Port 1523 firewall rules verified.</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-6 text-center text-sm">
+            <p>Policy Watch Monorepo Migration Strategy &copy; 2023</p>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // --- DATA MODEL ---
+        const modules = [
+            {
+                id: 'loader',
+                name: 'Policy Loader',
+                role: 'Producer (Scraper)',
+                sp: 18,
+                desc: 'Migrate scraping logic to ECS Task. Handle WAFs via Proxy.',
+                options: {
+                    A: {
+                        label: 'Option A (Cloud Native)',
+                        desc: 'Full rewrite to ECS Fargate task with Proxy Service.',
+                        sp: 18,
+                        tasks: [
+                            { 
+                                id: 'PL-A-01', 
+                                name: 'Setup Monorepo Scaffold', 
+                                sp: 2, 
+                                owner: 'Dev 1',
+                                desc: 'Create `policy_retriever.py` in `packages/tools/` and implement the `BaseTool` interface to standardize the scraper within the new Monorepo structure.' 
+                            },
+                            { 
+                                id: 'PL-A-02', 
+                                name: 'Port Scraping Logic (Boto3)', 
+                                sp: 5, 
+                                owner: 'Dev 1',
+                                desc: 'Migrate existing Python scraper code to new structure. Refactor file handling to use `Boto3` for direct S3 upload, removing legacy "Rule File Service" calls to improve latency and reliability.' 
+                            },
+                            { 
+                                id: 'PL-A-03', 
+                                name: 'Implement Proxy Rotation', 
+                                sp: 3, 
+                                owner: 'Dev 1',
+                                desc: 'Integrate Proxy Service (e.g., BrightData/SmartProxy) SDK to rotate IPs automatically. This prevents WAF blocking from Payer Portals when running from AWS data center IPs.' 
+                            },
+                            { 
+                                id: 'PL-A-04', 
+                                name: 'HTML Scraping Capability', 
+                                sp: 3, 
+                                owner: 'Dev 1',
+                                desc: 'Add `BeautifulSoup` or `Selenium` logic to `policy_retriever.py` to support HTML-based policies, expanding coverage beyond just PDFs as per new requirements.' 
+                            },
+                            { 
+                                id: 'PL-A-05', 
+                                name: 'ECS Task & EventBridge', 
+                                sp: 3, 
+                                owner: 'Dev 2',
+                                desc: 'Create Terraform/CDK definitions for the ECS Fargate Task and configure an EventBridge Rule to trigger it every 4 hours, replacing the on-prem Cron job.' 
+                            },
+                            { 
+                                id: 'PL-A-06', 
+                                name: 'Validation (Shadow Mode)', 
+                                sp: 2, 
+                                owner: 'Dev 2',
+                                desc: 'Deploy the new task in "Shadow Mode" to run alongside the on-prem scraper. Automate comparison of S3 outputs to ensure 100% data parity before cutover.' 
+                            }
+                        ]
+                    },
+                    B: {
+                        label: 'Option B (Hybrid)',
+                        desc: 'Fallback: Wrap on-prem script in FastAPI. Call from ECS.',
+                        sp: 8,
+                        tasks: [
+                            { 
+                                id: 'PL-B-01', 
+                                name: 'FastAPI Wrapper (On-Prem)', 
+                                sp: 3, 
+                                owner: 'Dev 1',
+                                desc: 'Develop a Python `FastAPI` wrapper around the existing legacy scraper script on the on-prem server to expose a `/scrape` endpoint for remote invocation.' 
+                            },
+                            { 
+                                id: 'PL-B-02', 
+                                name: 'Monorepo Client Client', 
+                                sp: 2, 
+                                owner: 'Dev 1',
+                                desc: 'Create a lightweight `policy_retriever.py` in the Monorepo that acts as a client, making HTTP requests to the on-prem FastAPI endpoint to trigger scraping.' 
+                            },
+                            { 
+                                id: 'PL-B-03', 
+                                name: 'Secure Connectivity (VPN)', 
+                                sp: 3, 
+                                owner: 'Dev 2',
+                                desc: 'Configure Security Groups and VPN routing tables to allow the ECS Task in AWS to securely communicate with the on-prem FastAPI endpoint.' 
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                id: 'extractor',
+                name: 'Policy Extractor',
+                role: 'Consumer (Parser)',
+                sp: 12,
+                desc: 'Convert 24/7 service to scheduled task. Add HTML parsing.',
+                options: {
+                    A: {
+                        label: 'Standard Strategy',
+                        desc: 'Lift & Shift + Optimize for Event-Driven Architecture.',
+                        sp: 12,
+                        tasks: [
+                            { 
+                                id: 'PE-01', 
+                                name: 'Port to Monorepo (BaseTool)', 
+                                sp: 3, 
+                                owner: 'Dev 2',
+                                desc: 'Move existing extractor code to `packages/tools/policy_extractor.py` and implement the `BaseTool` interface to align with the Monorepo standard.' 
+                            },
+                            { 
+                                id: 'PE-02', 
+                                name: 'Shared DocumentParser', 
+                                sp: 3, 
+                                owner: 'Dev 2',
+                                desc: 'Extract PDF parsing logic into a shared `packages/common/document_parser.py` utility and add new HTML parsing logic to support diverse document types.' 
+                            },
+                            { 
+                                id: 'PE-03', 
+                                name: 'SQS Integration (DLQ)', 
+                                sp: 2, 
+                                owner: 'Dev 2',
+                                desc: 'Implement SQS listener logic to handle incoming events. Configure a Dead Letter Queue (DLQ) to capture failed parses for manual inspection and retry.' 
+                            },
+                            { 
+                                id: 'PE-04', 
+                                name: 'LLM Client (gpt-4o-mini)', 
+                                sp: 2, 
+                                owner: 'Dev 2',
+                                desc: 'Update LLM calls to use the shared `LLMClient` utility and verify compatibility with `gpt-4o-mini` model (correcting the `gpt-4.1-mini` typo).' 
+                            },
+                            { 
+                                id: 'PE-05', 
+                                name: 'Infra Setup (ECS)', 
+                                sp: 2, 
+                                owner: 'Dev 1',
+                                desc: 'Define the ECS Task definition for the Extractor. Remove auto-scaling rules associated with the old 24/7 service to switch to a task-based model.' 
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                id: 'analyzer',
+                name: 'Policy Analyzer',
+                role: 'Consumer (Logic)',
+                sp: 8,
+                desc: 'Orchestrate analysis logic via Step Functions.',
+                options: {
+                    A: {
+                        label: 'Standard Strategy',
+                        desc: 'Port logic and orchestrate via Step Functions.',
+                        sp: 8,
+                        tasks: [
+                            { 
+                                id: 'PA-01', 
+                                name: 'Port Logic (Top-N Match)', 
+                                sp: 3, 
+                                owner: 'Dev 1',
+                                desc: 'Copy logic to `packages/tools/policy_analyzer.py`. Verify `Top-N` matching algorithms function correctly within the new Monorepo directory structure.' 
+                            },
+                            { 
+                                id: 'PA-02', 
+                                name: 'Step Function Config', 
+                                sp: 3, 
+                                owner: 'Dev 1',
+                                desc: 'Design the AWS Step Functions State Machine JSON. Define the `WaitForRules` state to ensure the Analyzer only runs after Rules are successfully updated.' 
+                            },
+                            { 
+                                id: 'PA-03', 
+                                name: 'Integration Test', 
+                                sp: 2, 
+                                owner: 'Dev 1',
+                                desc: 'Validate Analyzer output by running it against a known "Golden Set" of policies and comparing the results to ensure logic consistency.' 
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                id: 'rules',
+                name: 'Rules Loader',
+                role: 'Producer (Legacy)',
+                sp: 13,
+                desc: 'Rewrite Perl to Python. Critical dependency on Oracle VPN.',
+                options: {
+                    A: {
+                        label: 'Option A (Rewrite)',
+                        desc: 'Complete rewrite of Perl logic to Python (Recommended).',
+                        sp: 13,
+                        tasks: [
+                            { 
+                                id: 'RL-A-01', 
+                                name: 'Analyze Perl/SQL', 
+                                sp: 3, 
+                                owner: 'Dev 2',
+                                desc: 'Thoroughly analyze the legacy Perl script to document all SQL queries and business logic. Validate these queries against the Oracle DB to ensure correctness.' 
+                            },
+                            { 
+                                id: 'RL-A-02', 
+                                name: 'AtlasDBClient (Oracle)', 
+                                sp: 3, 
+                                owner: 'Dev 2',
+                                desc: 'Create `packages/connectors/atlas_db.py` using `cx_Oracle`. Implement robust connection pooling and retry logic to handle potential network blips.' 
+                            },
+                            { 
+                                id: 'RL-A-03', 
+                                name: 'Business Logic Port', 
+                                sp: 5, 
+                                owner: 'Dev 2',
+                                desc: 'Rewrite the core rule consolidation and processing logic from Perl to Python in `packages/rules/rules_loader.py`, ensuring functionality matches the legacy script.' 
+                            },
+                            { 
+                                id: 'RL-A-04', 
+                                name: 'Shadow Mode Validation', 
+                                sp: 2, 
+                                owner: 'Dev 2',
+                                desc: 'Run the new Python ECS task alongside the legacy Perl script. Compare the generated JSON in S3 to confirm the rewrite produces identical output.' 
+                            }
+                        ]
+                    },
+                    B: {
+                        label: 'Option B (Wrapper)',
+                        desc: 'Interim: Wrap Perl script in Python subprocess.',
+                        sp: 5,
+                        tasks: [
+                            { 
+                                id: 'RL-B-01', 
+                                name: 'Dockerize Perl Runtime', 
+                                sp: 3, 
+                                owner: 'Dev 2',
+                                desc: 'Create a Dockerfile that includes the Perl runtime and all necessary dependencies. Copy the legacy Perl script into this container image.' 
+                            },
+                            { 
+                                id: 'RL-B-02', 
+                                name: 'Python Subprocess Wrapper', 
+                                sp: 2, 
+                                owner: 'Dev 2',
+                                desc: 'Create `rules_loader.py` in the Monorepo that uses `subprocess.run()` to execute the legacy Perl script within the container, enabling orchestration.' 
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                id: 'processor',
+                name: 'Rules Processor',
+                role: 'Consumer (ML)',
+                sp: 3,
+                desc: 'Automate embedding generation via EventBridge.',
+                options: {
+                    A: {
+                        label: 'Standard Strategy',
+                        desc: 'Automate via EventBridge trigger.',
+                        sp: 3,
+                        tasks: [
+                            { 
+                                id: 'RP-01', 
+                                name: 'Port to Monorepo', 
+                                sp: 2, 
+                                owner: 'Dev 1',
+                                desc: 'Move the existing rules processing logic to `packages/tools/rules_processor.py`, ensuring it aligns with the Monorepo structure.' 
+                            },
+                            { 
+                                id: 'RP-02', 
+                                name: 'Event Trigger Config', 
+                                sp: 1, 
+                                owner: 'Dev 1',
+                                desc: 'Configure the `BaseTool` entry point to accept and parse the EventBridge payload (specifically the `RulesLoadedSuccess` event) to trigger execution automatically.' 
+                            }
+                        ]
+                    }
+                }
+            }
+        ];
+
+        // --- RENDER LOGIC ---
+
+        function renderModuleList() {
+            const list = document.getElementById('moduleList');
+            list.innerHTML = modules.map((m, idx) => `
+                <button onclick="selectModule(${idx}, 'A')" id="mod-btn-${idx}" class="module-btn w-full text-left p-4 border-b border-slate-100 flex justify-between items-center group">
+                    <div>
+                        <div class="font-bold text-sm text-slate-800 group-hover:text-blue-700">${m.name}</div>
+                        <div class="text-xs text-slate-500">${m.role}</div>
+                    </div>
+                    <div class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">${m.sp} SP</div>
+                </button>
+            `).join('');
+            selectModule(0, 'A');
+        }
+
+        function selectModule(index, strategyKey) {
+            const m = modules[index];
+            const currentOpt = m.options[strategyKey];
+            
+            // Update Active State
+            document.querySelectorAll('.module-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`mod-btn-${index}`).classList.add('active');
+
+            // Render Detail
+            const detail = document.getElementById('moduleDetail');
+            
+            // Re-trigger animation
+            detail.classList.remove('slide-in');
+            void detail.offsetWidth;
+            detail.classList.add('slide-in');
+
+            // Build Toggle Buttons if needed
+            let toggleHTML = '';
+            const hasOptionB = m.options.hasOwnProperty('B');
+            
+            if (hasOptionB) {
+                toggleHTML = `
+                    <div class="flex bg-slate-100 p-1 rounded-lg mb-4 self-start">
+                        <button onclick="selectModule(${index}, 'A')" class="px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${strategyKey === 'A' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}">Option A</button>
+                        <button onclick="selectModule(${index}, 'B')" class="px-4 py-1.5 text-xs font-bold rounded-md transition-colors ${strategyKey === 'B' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}">Option B</button>
+                    </div>
+                `;
+            }
+
+            const badgeClass = strategyKey === 'A' ? 'badge-rec' : 'badge-warn';
+
+            detail.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-900">${m.name}</h3>
+                        <p class="text-slate-600 mt-1">${m.desc}</p>
+                    </div>
+                    <span class="${badgeClass} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                        ${currentOpt.label}
+                    </span>
+                </div>
+
+                ${toggleHTML}
+
+                <p class="text-sm text-slate-500 italic mb-4 bg-slate-50 p-2 rounded border border-slate-100">
+                    <strong>Strategy:</strong> ${currentOpt.desc}
+                </p>
+
+                <div class="bg-white rounded-lg border border-slate-200 overflow-hidden mb-6 shadow-sm">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3 w-24">Task ID</th>
+                                <th class="px-6 py-3 w-64">Task Name</th>
+                                <th class="px-6 py-3">Detailed Description</th>
+                                <th class="px-6 py-3 w-24">Assignee</th>
+                                <th class="px-6 py-3 text-right w-20">Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${currentOpt.tasks.map(t => `
+                                <tr class="bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                    <td class="px-6 py-4 font-mono text-slate-500 font-bold align-top">${t.id}</td>
+                                    <td class="px-6 py-4 font-medium text-slate-900 align-top">${t.name}</td>
+                                    <td class="px-6 py-4 text-slate-600 leading-relaxed align-top text-xs">${t.desc}</td>
+                                    <td class="px-6 py-4 align-top">
+                                        <span class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">${t.owner}</span>
+                                    </td>
+                                    <td class="px-6 py-4 text-right font-bold text-slate-700 align-top">${t.sp}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        <tfoot class="bg-slate-50 font-bold text-slate-900">
+                            <tr>
+                                <td colspan="4" class="px-6 py-3 text-right">Option Effort:</td>
+                                <td class="px-6 py-3 text-right">${currentOpt.sp} SP</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-100 p-4 rounded-lg flex gap-3 items-start mt-auto">
+                    <span class="text-xl">💡</span>
+                    <div>
+                        <h4 class="font-bold text-blue-900 text-sm">Architect's Note</h4>
+                        <p class="text-xs text-blue-800 mt-1 leading-relaxed">
+                            Ensure all prerequisites (VPN, Secrets, IAM) are unblocked before starting Day 1 tasks to maintain velocity.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- CHART INITIALIZATION ---
+        
+        function initCharts() {
+            // SP Distribution Chart
+            const ctxSP = document.getElementById('spChart').getContext('2d');
+            new Chart(ctxSP, {
+                type: 'doughnut',
+                data: {
+                    labels: modules.map(m => m.name),
+                    datasets: [{
+                        data: modules.map(m => m.sp),
+                        backgroundColor: ['#3b82f6', '#10b981', '#a855f7', '#f59e0b', '#64748b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderModuleList();
+            initCharts();
+        });
+
+    </script>
+</body>
+</html>
