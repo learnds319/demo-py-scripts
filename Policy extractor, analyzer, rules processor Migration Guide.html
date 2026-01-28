@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Native Modules | Migration Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Theme: Cloud Native Teal & Slate */
+        :root {
+            --bg-color: #f0fdfa; /* teal-50 */
+            --text-main: #0f172a; /* slate-900 */
+            --accent-teal: #0d9488; /* teal-600 */
+            --accent-indigo: #4f46e5; /* indigo-600 */
+            --code-bg: #1e293b;
+        }
+
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+
+        /* Animations */
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Code Block Styling */
+        .code-window { background: var(--code-bg); color: #e2e8f0; font-family: 'Consolas', 'Monaco', monospace; border-radius: 0.5rem; overflow: hidden; height: 400px; display: flex; flex-direction: column; }
+        .code-header { background: #0f172a; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .code-body { padding: 1.5rem; overflow: auto; font-size: 0.85rem; line-height: 1.6; white-space: pre; flex-grow: 1; }
+        .keyword { color: #2dd4bf; } /* teal-400 */
+        .string { color: #fb923c; } /* orange-400 */
+        .comment { color: #94a3b8; font-style: italic; } /* slate-400 */
+        .function { color: #facc15; } /* yellow-400 */
+
+        /* Tab Active State */
+        .tab-btn { transition: all 0.2s; border-bottom: 2px solid transparent; opacity: 0.7; }
+        .tab-btn:hover { opacity: 1; background-color: rgba(13, 148, 136, 0.05); }
+        .tab-btn.active { border-bottom: 2px solid var(--accent-teal); color: var(--accent-teal); font-weight: 700; opacity: 1; background-color: rgba(13, 148, 136, 0.1); }
+        
+        /* Module Selection Tabs */
+        .module-tab { transition: all 0.2s; border-left: 4px solid transparent; }
+        .module-tab.active { border-left-color: var(--accent-teal); background-color: white; shadow: md; }
+
+        /* Flow Diagram Lines */
+        .flow-line::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: -20px;
+            width: 20px;
+            height: 2px;
+            background-color: #cbd5e1;
+            z-index: 0;
+        }
+        .flow-line:last-child::after { display: none; }
+        @media (max-width: 768px) {
+            .flow-line::after {
+                top: 100%;
+                left: 50%;
+                width: 2px;
+                height: 20px;
+                right: auto;
+                transform: translateX(-50%);
+            }
+        }
+    </style>
+    <!-- Chosen Palette: Teal (Cloud Native) & Indigo -->
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-teal-100 sticky top-0 z-50 shadow-sm backdrop-blur-sm bg-opacity-95">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-teal-600 text-white w-8 h-8 rounded flex items-center justify-center font-bold text-sm shadow-sm">CN</div>
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight">Cloud Native Modules <span class="font-normal text-slate-500">| Migration Guide</span></h1>
+            </div>
+            <div class="flex gap-4">
+                <button onclick="selectModule('extractor')" id="nav-extractor" class="module-tab active px-4 py-2 text-sm font-medium text-slate-600 hover:text-teal-700">Policy Extractor</button>
+                <button onclick="selectModule('analyzer')" id="nav-analyzer" class="module-tab px-4 py-2 text-sm font-medium text-slate-600 hover:text-teal-700">Policy Analyzer</button>
+                <button onclick="selectModule('processor')" id="nav-processor" class="module-tab px-4 py-2 text-sm font-medium text-slate-600 hover:text-teal-700">Rules Processor</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow w-full max-w-7xl mx-auto px-6 py-12 space-y-12">
+
+        <!-- Module Context Header -->
+        <section id="module-header" class="fade-in">
+            <!-- Dynamic Content -->
+        </section>
+
+        <!-- Strategy Grid -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 fade-in" style="animation-delay: 0.1s;">
+            <!-- Card 1 -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-teal-400 transition-all">
+                <div class="text-3xl mb-3 text-teal-600">☁️</div>
+                <h3 class="font-bold text-slate-800 mb-1">Architecture</h3>
+                <p id="card-arch" class="text-sm text-slate-600">Event-Driven ECS Task (EC2 Launch Type).</p>
+            </div>
+            <!-- Card 2 -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-teal-400 transition-all">
+                <div class="text-3xl mb-3 text-indigo-600">🔄</div>
+                <h3 class="font-bold text-slate-800 mb-1">Orchestration</h3>
+                <p id="card-orch" class="text-sm text-slate-600">Triggered by AWS Step Functions.</p>
+            </div>
+            <!-- Card 3 -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-teal-400 transition-all">
+                <div class="text-3xl mb-3 text-amber-500">🛡️</div>
+                <h3 class="font-bold text-slate-800 mb-1">Resilience</h3>
+                <p id="card-res" class="text-sm text-slate-600">Dead Letter Queue (DLQ) & Auto-Retries.</p>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="fade-in" style="animation-delay: 0.2s;">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="h-8 w-1 bg-teal-600 rounded-full"></div>
+                <h2 class="text-2xl font-bold text-slate-800">Cloud Workflow</h2>
+            </div>
+            
+            <div class="bg-slate-900 rounded-2xl p-8 relative overflow-hidden text-white shadow-xl">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10" id="flow-diagram">
+                    <!-- Dynamic Flow Steps -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Implementation Lab -->
+        <section class="fade-in" style="animation-delay: 0.3s;">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="h-8 w-1 bg-indigo-600 rounded-full"></div>
+                <h2 class="text-2xl font-bold text-slate-800">Implementation Lab</h2>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <div class="flex border-b border-slate-200 bg-slate-50">
+                    <button onclick="switchCode('logic')" id="tab-logic" class="tab-btn active px-6 py-4 text-sm text-slate-600">1. Python Logic</button>
+                    <button onclick="switchCode('asl')" id="tab-asl" class="tab-btn px-6 py-4 text-sm text-slate-600">2. Step Functions (ASL)</button>
+                    <button onclick="switchCode('infra')" id="tab-infra" class="tab-btn px-6 py-4 text-sm text-slate-600">3. Infrastructure (TF/CDK)</button>
+                </div>
+
+                <div class="p-0">
+                    <div id="code-content" class="code-window">
+                        <!-- Dynamic Code -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Prerequisites Checklist -->
+        <section class="fade-in" style="animation-delay: 0.4s;">
+            <div class="bg-teal-50 rounded-xl p-8 border border-teal-100">
+                <h3 class="text-lg font-bold text-teal-900 mb-4">Migration Prerequisites</h3>
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-4" id="prereq-list">
+                    <!-- Dynamic List -->
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Data & Logic -->
+    <script>
+        const moduleData = {
+            extractor: {
+                title: "Policy Extractor",
+                subtitle: "PDF Parsing & Ontology Generation",
+                desc: "Migrates from an always-on 24/7 Service to an efficient <strong>Scheduled ECS Task</strong>. Triggered only when new documents are available.",
+                flow: [
+                    { icon: "📦", label: "Input", sub: "S3 PDF Keys" },
+                    { icon: "⚙️", label: "Process", sub: "ECS Task (PyMuPDF)" },
+                    { icon: "🧠", label: "AI Analysis", sub: "OpenAI (GPT-4o-mini)" },
+                    { icon: "💾", label: "Output", sub: "JSON to S3 + DB" }
+                ],
+                code: {
+                    logic: `<span class="keyword">import</span> boto3, openai
+<span class="keyword">from</span> common <span class="keyword">import</span> DocumentParser
+
+<span class="keyword">def</span> <span class="function">process_document</span>(s3_key):
+    <span class="comment"># 1. Download PDF</span>
+    s3.download_file(BUCKET, s3_key, <span class="string">"/tmp/doc.pdf"</span>)
+    
+    <span class="comment"># 2. Parse Text (New Shared Utility)</span>
+    text = DocumentParser.extract_text(<span class="string">"/tmp/doc.pdf"</span>)
+    
+    <span class="comment"># 3. Generate Ontology</span>
+    response = openai.ChatCompletion.create(
+        model=<span class="string">"gpt-4o-mini"</span>,
+        messages=[{<span class="string">"role"</span>: <span class="string">"user"</span>, <span class="string">"content"</span>: text}]
+    )
+    
+    <span class="comment"># 4. Save</span>
+    save_to_s3(response.json())`,
+                    asl: `{
+  <span class="string">"StartAt"</span>: <span class="string">"RunExtractor"</span>,
+  <span class="string">"States"</span>: {
+    <span class="string">"RunExtractor"</span>: {
+      <span class="string">"Type"</span>: <span class="string">"Task"</span>,
+      <span class="string">"Resource"</span>: <span class="string">"arn:aws:states:::ecs:runTask.sync"</span>,
+      <span class="string">"Parameters"</span>: {
+        <span class="string">"LaunchType"</span>: <span class="string">"EC2"</span>,
+        <span class="string">"Cluster"</span>: <span class="string">"arn:aws:ecs:..."</span>,
+        <span class="string">"TaskDefinition"</span>: <span class="string">"policy-extractor"</span>
+      },
+      <span class="string">"Retry"</span>: [{ <span class="string">"ErrorEquals"</span>: [<span class="string">"States.TaskFailed"</span>], <span class="string">"MaxAttempts"</span>: 2 }],
+      <span class="string">"Catch"</span>: [{ <span class="string">"ErrorEquals"</span>: [<span class="string">"States.ALL"</span>], <span class="string">"Next"</span>: <span class="string">"DLQ_Alert"</span> }],
+      <span class="string">"End"</span>: <span class="keyword">true</span>
+    }
+  }
+}`,
+                    infra: `<span class="comment"># Terraform: ECS Task Definition</span>
+resource <span class="string">"aws_ecs_task_definition"</span> <span class="string">"extractor"</span> {
+  family = <span class="string">"policy-extractor"</span>
+  container_definitions = jsonencode([{
+    name  = <span class="string">"extractor"</span>
+    image = <span class="string">"\${var.ecr_repo}:latest"</span>
+    memory = 2048
+    cpu    = 1024
+    environment = [
+        { name = <span class="string">"OPENAI_API_KEY"</span>, valueFrom = <span class="string">"arn:aws:secretsmanager:..."</span> }
+    ]
+  }])
+}`
+                },
+                prereqs: [
+                    "<strong>Secrets Manager:</strong> OpenAI API Key & DB Creds.",
+                    "<strong>S3 Buckets:</strong> Create/Verify 'processed-json' bucket.",
+                    "<strong>EC2 Capacity:</strong> Ensure Auto Scaling Group allows scale-up.",
+                    "<strong>IAM Role:</strong> Grant ECS Task access to S3 & Secrets."
+                ]
+            },
+            analyzer: {
+                title: "Policy Analyzer",
+                subtitle: "Rule Impact Analysis",
+                desc: "Pure logic component. Compares extracted Policy Ontology against Rule Embeddings. Runs <strong>strictly after</strong> Extractor and Rules Processor succeed.",
+                flow: [
+                    { icon: "📥", label: "Input", sub: "Policy JSON + Rule Embeddings" },
+                    { icon: "🔍", label: "Compare", sub: "Vector Similarity Search" },
+                    { icon: "🤖", label: "LLM Verify", sub: "GPT-4o Evaluation" },
+                    { icon: "📊", label: "Report", sub: "Impact Assessment JSON" }
+                ],
+                code: {
+                    logic: `<span class="keyword">def</span> <span class="function">analyze_impact</span>(policy_json):
+    <span class="comment"># 1. Load Rule Embeddings (from DB)</span>
+    rules = db.get_active_rule_embeddings()
+    
+    <span class="comment"># 2. Find Top-N Matches</span>
+    matches = vector_search(policy_json[<span class="string">'embedding'</span>], rules, top_k=5)
+    
+    <span class="comment"># 3. LLM Verification</span>
+    impact = llm.assess_impact(policy_json, matches)
+    
+    <span class="comment"># 4. Generate Report</span>
+    return impact`,
+                    asl: `{
+  <span class="string">"Comment"</span>: <span class="string">"Runs after Extractor"</span>,
+  <span class="string">"StartAt"</span>: <span class="string">"RunAnalyzer"</span>,
+  <span class="string">"States"</span>: {
+    <span class="string">"RunAnalyzer"</span>: {
+      <span class="string">"Type"</span>: <span class="string">"Task"</span>,
+      <span class="string">"Resource"</span>: <span class="string">"arn:aws:states:::ecs:runTask.sync"</span>,
+      <span class="string">"Parameters"</span>: {
+        <span class="string">"LaunchType"</span>: <span class="string">"EC2"</span>,
+        <span class="string">"TaskDefinition"</span>: <span class="string">"policy-analyzer"</span>
+      },
+      <span class="string">"End"</span>: <span class="keyword">true</span>
+    }
+  }
+}`,
+                    infra: `<span class="comment"># Terraform: Security Group</span>
+resource <span class="string">"aws_security_group"</span> <span class="string">"analyzer_sg"</span> {
+  name        = <span class="string">"analyzer-task-sg"</span>
+  description = <span class="string">"Allow outbound to RDS and OpenAI"</span>
+  
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = <span class="string">"-1"</span>
+    cidr_blocks = [<span class="string">"0.0.0.0/0"</span>]
+  }
+}`
+                },
+                prereqs: [
+                    "<strong>Vector DB:</strong> Ensure `pgvector` or similar is active on RDS.",
+                    "<strong>Dependency:</strong> Rules Processor must finish first.",
+                    "<strong>Model:</strong> Confirm `gpt-4o-mini` rate limits."
+                ]
+            },
+            processor: {
+                title: "Rules Processor",
+                subtitle: "Embedding Generation",
+                desc: "Migrates from manual On-Prem script to <strong>Automated ECS Task</strong>. Generates vector embeddings for new rules fetched by the Rules Loader.",
+                flow: [
+                    { icon: "📂", label: "Input", sub: "Consolidated Rules JSON (S3)" },
+                    { icon: "🧮", label: "Embed", sub: "Generate Vectors (OpenAI)" },
+                    { icon: "💾", label: "Store", sub: "Update RDS/Postgres" },
+                    { icon: "📡", label: "Signal", sub: "Notify Completion" }
+                ],
+                code: {
+                    logic: `<span class="keyword">def</span> <span class="function">process_rules</span>(s3_path):
+    <span class="comment"># 1. Read Rules</span>
+    rules = s3.read_json(s3_path)
+    
+    <span class="comment"># 2. Generate Embeddings</span>
+    for rule in rules:
+        vector = openai.Embedding.create(
+            input=rule[<span class="string">'text'</span>], 
+            model=<span class="string">"text-embedding-ada-002"</span>
+        )
+        rule[<span class="string">'vector'</span>] = vector
+        
+    <span class="comment"># 3. Bulk Upsert to DB</span>
+    db.upsert_rules(rules)`,
+                    asl: `{
+  <span class="string">"StartAt"</span>: <span class="string">"ProcessRules"</span>,
+  <span class="string">"States"</span>: {
+    <span class="string">"ProcessRules"</span>: {
+      <span class="string">"Type"</span>: <span class="string">"Task"</span>,
+      <span class="string">"Resource"</span>: <span class="string">"arn:aws:states:::ecs:runTask.sync"</span>,
+      <span class="string">"Parameters"</span>: { ... },
+      <span class="string">"Next"</span>: <span class="string">"UpdateStatus"</span>
+    },
+    <span class="string">"UpdateStatus"</span>: {
+      <span class="string">"Type"</span>: <span class="string">"Task"</span>,
+      <span class="string">"Resource"</span>: <span class="string">"arn:aws:states:::sns:publish"</span>,
+      <span class="string">"Parameters"</span>: {
+        <span class="string">"Message"</span>: <span class="string">"Rules Updated Successfully"</span>
+      },
+      <span class="string">"End"</span>: <span class="keyword">true</span>
+    }
+  }
+}`,
+                    infra: `<span class="comment"># Terraform: IAM Role for S3 Access</span>
+resource <span class="string">"aws_iam_role_policy"</span> <span class="string">"s3_read"</span> {
+  name = <span class="string">"s3_read_policy"</span>
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = <span class="string">"2012-10-17"</span>
+    Statement = [{
+      Action = [<span class="string">"s3:GetObject"</span>]
+      Effect = <span class="string">"Allow"</span>
+      Resource = <span class="string">"arn:aws:s3:::rules-bucket/*"</span>
+    }]
+  })
+}`
+                },
+                prereqs: [
+                    "<strong>Source Data:</strong> Rules Loader must complete successfully.",
+                    "<strong>Database:</strong> Schema update for Vector columns.",
+                    "<strong>Cost Control:</strong> Monitor Embedding API usage."
+                ]
+            }
+        };
+
+        let currentModule = 'extractor';
+
+        function selectModule(moduleId) {
+            currentModule = moduleId;
+            
+            // Update Nav
+            document.querySelectorAll('.module-tab').forEach(el => el.classList.remove('active', 'bg-white', 'shadow-md', 'border-teal-600', 'text-teal-700'));
+            const activeBtn = document.getElementById(`nav-${moduleId}`);
+            activeBtn.classList.add('active', 'bg-white', 'shadow-md', 'border-teal-600', 'text-teal-700');
+
+            renderContent();
+        }
+
+        function renderContent() {
+            const data = moduleData[currentModule];
+
+            // 1. Header
+            document.getElementById('module-header').innerHTML = `
+                <div class="bg-white rounded-2xl p-8 border border-teal-100 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold text-slate-800 mb-2">${data.title}</h2>
+                            <p class="text-lg text-teal-600 font-medium mb-4">${data.subtitle}</p>
+                            <p class="text-slate-600 max-w-3xl leading-relaxed">${data.desc}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 2. Flow Diagram
+            const flowContainer = document.getElementById('flow-diagram');
+            flowContainer.innerHTML = data.flow.map((step, idx) => `
+                <div class="flow-line flex-1 bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col items-center text-center relative z-10 w-full md:w-auto">
+                    <div class="text-2xl mb-2">${step.icon}</div>
+                    <h3 class="font-bold text-sm text-teal-400 uppercase tracking-wider mb-1">${step.label}</h3>
+                    <p class="text-xs text-slate-300">${step.sub}</p>
+                </div>
+            `).join('');
+
+            // 3. Prerequisites
+            const prereqList = document.getElementById('prereq-list');
+            prereqList.innerHTML = data.prereqs.map(item => `
+                <li class="flex items-start gap-3 bg-white p-3 rounded-lg border border-teal-50">
+                    <span class="text-teal-500 mt-0.5">✓</span>
+                    <span class="text-sm text-slate-700">${item}</span>
+                </li>
+            `).join('');
+
+            // 4. Reset Code Tab
+            switchCode('logic');
+        }
+
+        function switchCode(type) {
+            // Update Tabs
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${type}`).classList.add('active');
+
+            // Update Content
+            const codeWindow = document.getElementById('code-content');
+            const data = moduleData[currentModule];
+            
+            let headerText = "";
+            let headerColor = "";
+            
+            if(type === 'logic') { headerText = "src/main.py"; headerColor = "text-teal-400"; }
+            if(type === 'asl') { headerText = "workflow/state_machine.json"; headerColor = "text-yellow-400"; }
+            if(type === 'infra') { headerText = "terraform/main.tf"; headerColor = "text-purple-400"; }
+
+            codeWindow.innerHTML = `
+                <div class="code-header">
+                    <span class="text-xs text-slate-400 font-mono">${headerText}</span>
+                    <span class="text-xs font-bold ${headerColor} bg-white/10 px-2 py-1 rounded">${type.toUpperCase()}</span>
+                </div>
+                <div class="code-body">${data.code[type]}</div>
+            `;
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            selectModule('extractor');
+        });
+
+    </script>
+</body>
+</html>
